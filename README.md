@@ -21,3 +21,5 @@ A FilmNerd webalkalmazást elsősorban az igazán nagy filmrajongóknak ajánlju
   <li>A filmes listák belüli szűrés: műfaj, színész, rendező, játékidő alapján</li>
   <li>Filmekről, színészekről, rendezőkről adatlap</li>
 </ul>
+## Adatbázis (jelenleg)
+<img width="1434" height="931" alt="db" src="https://github.com/user-attachments/assets/497ed91b-9d77-4423-aa1d-525100ea9355" />
