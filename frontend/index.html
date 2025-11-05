@@ -4,6 +4,15 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        img-src 'self' https://image.tmdb.org data:;
+        frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://www.youtube-nocookie.com;
+        connect-src 'self' https://api.themoviedb.org;
+        style-src 'self' 'unsafe-inline';
+    ">
+
     <title>filmnerd</title>
   </head>
   <body>

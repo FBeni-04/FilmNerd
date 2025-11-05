@@ -1,13 +1,7 @@
-/*
-FilmNerd – Letterboxd-szerű dark témás UI + carousel-strip + template navbar
-- Dark háttér, pasztell szöveg, poszter-fókusz
-- Scroll-snap alapú vízszintes "carousel" sávok bal/jobb gombokkal
-- Drag-to-scroll (egér lenyomva húzás), touch támogatás
-- Minimal dependency: React (+ Tailwind ajánlott), lucide-react opcionális
-*/
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Star, ChevronLeft, ChevronRight, Film } from "lucide-react"; // ha nincs lucide: cseréld ★, ‹, ›, 🎬 karakterekre
+import { Star, ChevronLeft, ChevronRight, Film } from "lucide-react";
+
 
 // --- Ideiglenes film-azonosítók (helykitöltő listák) ---
 const RECOMMENDED_IDS = [238, 550, 680, 155, 424];
@@ -15,16 +9,69 @@ const POPULAR_WITH_FRIENDS_IDS = [603, 744, 1891, 807, 13];
 const ADMIN_FAVORITES_IDS = [497, 24428, 429, 27205, 122];
 const SAME_TASTES_IDS = [1124, 78, 920, 807, 429617];
 
+
 // --- TMDB kliens ---
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMG = { w342: (p) => `https://image.tmdb.org/t/p/w342${p}` };
 const tmdbApiKey = (import.meta.env.VITE_TMDB_API_KEY || "").trim();
 
+// -- ÚJ: backend sections
+async function fetchSectionsFromDB() {
+  let url = "/api/movies/";           // Vite proxy miatt relatív út!
+  const ids = [];
+
+  while (url) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("Movies fetch failed");
+    const j = await r.json();
+
+    const page = Array.isArray(j) ? j : (j.results || []);
+    ids.push(...page.map(m => m.movie_id));
+
+    // ha absolute a next (pl. http://127.0.0.1:8000/api/movies/?page=2), csupaszítsd le relatívra
+    url = j.next ? j.next.replace(/^https?:\/\/[^/]+/, "") : null;
+  }
+
+  return [{
+    key: "taste",
+    title: "Popular this week",
+    ids
+  }, {
+    key: "admin",
+    title: "Admin's favorites",
+    ids
+  }, 
+{
+    key: "recommended",
+    title: "Recommended for you",
+    ids
+  },
+{
+    key: "friends",
+    title: "Popular with friends",
+    ids
+  }];
+}
+
+
+
+
+// -- Segéd: slugból numerikus TMDB id
+const toTmdbId = (v) => {
+  const m = String(v ?? "").match(/^\d+/);
+  return m ? Number(m[0]) : null;
+};
+
+// -- TMDB fetch-ek: az eredeti ID-t is visszaadjuk, hogy a linkben slug maradhasson
 const cache = new Map();
-async function fetchMovie(id) {
-  const key = `movie:${id}`;
-  if (cache.has(key)) return cache.get(key);
-  const url = `${TMDB_BASE}/movie/${id}?api_key=${tmdbApiKey}&language=hu-HU&append_to_response=credits`;
+async function fetchMovie(sourceId) {
+  const tmdbId = toTmdbId(sourceId);
+  if (!tmdbId) throw new Error(`Érvénytelen ID: ${sourceId}`);
+
+  const key = `movie:${tmdbId}`;
+  if (cache.has(key)) return { ...cache.get(key), _sourceId: sourceId };
+
+  const url = `${TMDB_BASE}/movie/${tmdbId}?api_key=${tmdbApiKey}&language=en-EN&append_to_response=credits`;
   const res = await fetch(url);
   if (!res.ok) {
     let msg = `TMDB hiba: ${res.status}`;
@@ -33,10 +80,19 @@ async function fetchMovie(id) {
   }
   const data = await res.json();
   cache.set(key, data);
-  return data;
+  return { ...data, _sourceId: sourceId };
 }
+
 async function fetchMovies(ids = []) {
-  return Promise.all(ids.map(async (id) => { try { return await fetchMovie(id); } catch (e) { return { id, error: String(e) }; } }));
+  return Promise.all(
+    ids
+      .map((id) => ({ id, tmdbId: toTmdbId(id) }))
+      .filter(({ tmdbId }) => tmdbId != null)
+      .map(async ({ id }) => {
+        try { return await fetchMovie(id); }
+        catch (e) { return { id, _sourceId: id, error: String(e) }; }
+      })
+  );
 }
 
 // --- Segédek ---
@@ -94,12 +150,15 @@ function Skeleton({ className = "" }) { return <div className={`animate-pulse ro
 function MovieCard({ movie }) {
   const poster = movie?.poster_path ? TMDB_IMG.w342(movie.poster_path) : null;
   const title = movie?.title || movie?.name || "Ismeretlen cím";
-  const year = getYear(movie?.release_date);
-  const vote = movie?.vote_average ? movie.vote_average.toFixed(1) : "–";
-  const cast = topCast(movie?.credits, 3);
+  const year  = getYear(movie?.release_date);
+  const vote  = movie?.vote_average ? movie.vote_average.toFixed(1) : "–";
+  const cast  = topCast(movie?.credits, 3);
+
+  const href = `/movie/${encodeURIComponent(movie._sourceId ?? movie.id)}`;
 
   return (
     <div className="snap-start">
+      <a href={href}>
       <Card className="w-44 min-w-[11rem] md:w-48 md:min-w-[12rem] overflow-hidden transition-transform duration-200 hover:-translate-y-0.5 hover:shadow">
         <div className="relative aspect-[2/3] bg-neutral-800">
           {poster ? (
@@ -118,6 +177,7 @@ function MovieCard({ movie }) {
           {cast && <div className="mt-2 line-clamp-2 text-[11px] text-neutral-300/80">{cast}</div>}
         </div>
       </Card>
+      </a>
     </div>
   );
 }
@@ -224,13 +284,29 @@ function Navbar() {
   );
 }
 
+
+
 export default function FilmNerdHome() {
-  const sections = useMemo(() => ([
-    { key: "rec", title: "For you", ids: RECOMMENDED_IDS },
-    { key: "friends", title: "Popular with friends", ids: POPULAR_WITH_FRIENDS_IDS },
-    { key: "admin", title: "Admins' favourite", ids: ADMIN_FAVORITES_IDS },
-    { key: "taste", title: "Popular this week", ids: SAME_TASTES_IDS }
-  ]), []);
+  const [sections, setSections] = useState([])
+  const [secErr, setSecErr] = useState("")
+  const [secLoading, setSecLoading] = useState(true)
+
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      try {
+        setSecLoading(true)
+        const s = await fetchSectionsFromDB()
+        if (alive) setSections((s || []).filter(x => x?.ids?.length))
+      } catch (e) {
+        if (alive) setSecErr(String(e))
+      } finally {
+        if (alive) setSecLoading(false)
+      }
+    })()
+    return () => { alive = false }
+  }, [])
+
 
   return (
     <div className="min-h-dvh bg-neutral-950 text-neutral-200">
@@ -256,7 +332,7 @@ export default function FilmNerdHome() {
         </main>
 
         <footer className="mt-12 border-t border-white/10 pt-6 text-xs text-neutral-500">
-          TMDB adatforrás – © {new Date().getFullYear()} FilmNerd.
+           © {new Date().getFullYear()} FilmNerd.
         </footer>
       </div>
 
