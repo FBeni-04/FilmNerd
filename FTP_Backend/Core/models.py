@@ -5,20 +5,15 @@ from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 
 
-# --- Felhasználói modell ---
-# Az AbstractUser modellt bővítjük, hogy megkapjuk a Django beépített
-# hitelesítési funkcióit (username, email, password kezelés stb.)
-class User(AbstractUser):
-    """
-    Kibővített felhasználói modell.
-    Az 'id' (PK), 'username', 'email', 'password_encrypted' (password)
-    mezőket az AbstractUser kezeli.
-    """
-    # Az ERD-ben szereplő 'name' mező
-    name = models.CharField(max_length=255, blank=True)
-
-    # Az ERD-ben szereplő 'token_expiration' (int)
-    token_expiration = models.IntegerField(null=True, blank=True)
+# --- Felhasználói modell kiterjesztése ---
+class User(models.Model):
+    
+    user_id = models.BigAutoField(primary_key=True)  # Az ERD-nek megfelelően 'user_id' az elsődleges kulcs
+    name = models.CharField(max_length=255, blank=True) # Az ERD-ben szereplő 'name' mező
+    username = models.CharField(max_length=150, unique=True)  # Az ERD-ben szereplő 'username' mező
+    email = models.EmailField(unique=True)  # Az ERD-ben szereplő 'email' mező
+    password_encrypted = models.CharField(max_length=128)  # Az ERD-ben szereplő 'password' mező
+    token_expiration = models.IntegerField(null=True, blank=True)# Az ERD-ben szereplő 'token_expiration' (int)
 
     # M2M kapcsolat a filmekhez a 'watchlist' táblán keresztül
     watchlist = models.ManyToManyField(
@@ -49,7 +44,7 @@ class Genre(models.Model):
     Film műfajok táblája.
     """
     # Az ERD-nek megfelelően 'genre_id' az elsődleges kulcs
-    genre_id = models.AutoField(primary_key=True)
+    genre_id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
@@ -94,9 +89,6 @@ class Movie(models.Model):
         on_delete=models.PROTECT,  # Védjük a műfajt a törléstől, ha film hivatkozik rá
         related_name='movies'
     )
-
-    # Az ERD-ben 'rating' (int)
-    rating = models.IntegerField(null=True, blank=True)  # Pl. átlagértékelés
 
     # M2M kapcsolatok a 'through' modellekkel
     directors = models.ManyToManyField(
