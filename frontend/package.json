@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "eslint ."
   },
   "dependencies": {
+    "bootstrap": "^5.3.8",
     "lucide-react": "^0.546.0",
     "react": "^19.1.1",
-    "react-dom": "^19.1.1"
+    "react-dom": "^19.1.1",
+    "react-icons": "^5.5.0",
+    "react-router-dom": "^7.9.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
