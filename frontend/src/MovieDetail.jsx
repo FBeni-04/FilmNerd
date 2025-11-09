@@ -1,7 +1,10 @@
 import React, { useEffect, useState, useMemo } from "react";
 import { Star, Film } from "lucide-react";
+<<<<<<< HEAD
 import ReviewBox from "./components/ReviewBox";
 
+=======
+>>>>>>> b91a7bc283e843188e618488ecbbb928d391b0fc
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMG = {
@@ -287,8 +290,11 @@ export default function MovieDetail({ slug, movieId }) {
                   </div>
                 )}
 
+<<<<<<< HEAD
             {data && <ReviewBox movieId={id} />}
 
+=======
+>>>>>>> b91a7bc283e843188e618488ecbbb928d391b0fc
             {/* HOL NÉZHETŐ */}
             <div className="mt-10">
               <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">

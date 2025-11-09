@@ -1,7 +1,14 @@
+<<<<<<< HEAD
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { FaBars, FaFilm, FaMagnifyingGlass, FaXmark, FaChevronLeft, FaChevronRight, FaStar } from "react-icons/fa6";
 import Navbar from "./components/Navbar";
 import SearchBox from "./components/SearchBox";
+=======
+
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { Star, ChevronLeft, ChevronRight, Film } from "lucide-react";
+
+>>>>>>> b91a7bc283e843188e618488ecbbb928d391b0fc
 
 /**
  * ==========================
@@ -15,7 +22,12 @@ const FRIENDS_FAVORITES_IDS = [603, 11, 1891, 122, 424, 807, 1892, 603692, 98, 2
 const ADMINS_FAVORITES_IDS = [503919, 792307, 21484, 11167, 7452, 8321, 265195, 359940, 68718, 115];
 const POPULAR_THIS_WEEK_IDS = [299536, 385128, 634649, 346698, 667538, 109445, 38142, 337404, 11, 284054];
 
+<<<<<<< HEAD
 // TMDB
+=======
+
+// --- TMDB kliens ---
+>>>>>>> b91a7bc283e843188e618488ecbbb928d391b0fc
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMG = {
   w92: (p) => `https://image.tmdb.org/t/p/w92${p}`,
@@ -24,6 +36,7 @@ const TMDB_IMG = {
 };
 const tmdbApiKey = (import.meta.env.VITE_TMDB_API_KEY || "").trim();
 
+<<<<<<< HEAD
 /**
  * ==========================
  *  TMDB HELPERS
@@ -41,6 +54,65 @@ async function fetchMovie(sourceId) {
   const key = `movie:${tmdbId}`;
   if (cache.has(key)) return { ...cache.get(key), _sourceId: sourceId };
   const url = `${TMDB_BASE}/movie/${tmdbId}?api_key=${tmdbApiKey}&language=en-US&append_to_response=credits`;
+=======
+// -- ÚJ: backend sections
+async function fetchSectionsFromDB() {
+  let url = "/api/movies/";           // Vite proxy miatt relatív út!
+  const ids = [];
+
+  while (url) {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error("Movies fetch failed");
+    const j = await r.json();
+
+    const page = Array.isArray(j) ? j : (j.results || []);
+    ids.push(...page.map(m => m.movie_id));
+
+    // ha absolute a next (pl. http://127.0.0.1:8000/api/movies/?page=2), csupaszítsd le relatívra
+    url = j.next ? j.next.replace(/^https?:\/\/[^/]+/, "") : null;
+  }
+
+  return [{
+    key: "taste",
+    title: "Popular this week",
+    ids
+  }, {
+    key: "admin",
+    title: "Admin's favorites",
+    ids
+  }, 
+{
+    key: "recommended",
+    title: "Recommended for you",
+    ids
+  },
+{
+    key: "friends",
+    title: "Popular with friends",
+    ids
+  }];
+}
+
+
+
+
+// -- Segéd: slugból numerikus TMDB id
+const toTmdbId = (v) => {
+  const m = String(v ?? "").match(/^\d+/);
+  return m ? Number(m[0]) : null;
+};
+
+// -- TMDB fetch-ek: az eredeti ID-t is visszaadjuk, hogy a linkben slug maradhasson
+const cache = new Map();
+async function fetchMovie(sourceId) {
+  const tmdbId = toTmdbId(sourceId);
+  if (!tmdbId) throw new Error(`Érvénytelen ID: ${sourceId}`);
+
+  const key = `movie:${tmdbId}`;
+  if (cache.has(key)) return { ...cache.get(key), _sourceId: sourceId };
+
+  const url = `${TMDB_BASE}/movie/${tmdbId}?api_key=${tmdbApiKey}&language=en-EN&append_to_response=credits`;
+>>>>>>> b91a7bc283e843188e618488ecbbb928d391b0fc
   const res = await fetch(url);
   if (!res.ok) {
     let msg = `TMDB error: ${res.status}`;
@@ -50,6 +122,21 @@ async function fetchMovie(sourceId) {
   const data = await res.json();
   cache.set(key, data);
   return { ...data, _sourceId: sourceId };
+<<<<<<< HEAD
+=======
+}
+
+async function fetchMovies(ids = []) {
+  return Promise.all(
+    ids
+      .map((id) => ({ id, tmdbId: toTmdbId(id) }))
+      .filter(({ tmdbId }) => tmdbId != null)
+      .map(async ({ id }) => {
+        try { return await fetchMovie(id); }
+        catch (e) { return { id, _sourceId: id, error: String(e) }; }
+      })
+  );
+>>>>>>> b91a7bc283e843188e618488ecbbb928d391b0fc
 }
 
 async function fetchMovies(ids = []) {
@@ -140,6 +227,7 @@ function MovieCard({ movie }) {
   const year  = getYear(movie?.release_date);
   const vote  = movie?.vote_average ? movie.vote_average.toFixed(1) : "–";
   const cast  = topCast(movie?.credits, 3);
+<<<<<<< HEAD
   const href = `/movie/${encodeURIComponent(movie._sourceId ?? movie.id)}`;
   return (
     <div className="snap-start">
@@ -162,6 +250,32 @@ function MovieCard({ movie }) {
             {cast && <div className="mt-2 line-clamp-2 text-[11px] text-neutral-300/80">{cast}</div>}
           </div>
         </Card>
+=======
+
+  const href = `/movie/${encodeURIComponent(movie._sourceId ?? movie.id)}`;
+
+  return (
+    <div className="snap-start">
+      <a href={href}>
+      <Card className="w-44 min-w-[11rem] md:w-48 md:min-w-[12rem] overflow-hidden transition-transform duration-200 hover:-translate-y-0.5 hover:shadow">
+        <div className="relative aspect-[2/3] bg-neutral-800">
+          {poster ? (
+            <img src={poster} alt={title} loading="lazy" className="h-full w-full object-cover" />
+          ) : (
+            <div className="flex h-full items-center justify-center text-sm text-neutral-400">Nincs poszter</div>
+          )}
+          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-[10px] text-white">
+            <Star size={12} className="opacity-90" />
+            <span className="tabular-nums">{vote}</span>
+          </div>
+        </div>
+        <div className="p-3">
+          <div className="line-clamp-2 text-[13px] font-semibold text-neutral-100">{title}</div>
+          <div className="mt-1 text-[11px] text-neutral-400">{year}</div>
+          {cast && <div className="mt-2 line-clamp-2 text-[11px] text-neutral-300/80">{cast}</div>}
+        </div>
+      </Card>
+>>>>>>> b91a7bc283e843188e618488ecbbb928d391b0fc
       </a>
     </div>
   );
@@ -295,6 +409,7 @@ function PopularThisWeekStrip() {
 
 
 
+<<<<<<< HEAD
 
 export default function FilmNerdHome() {
   const sections = useMemo(() => ([
@@ -303,6 +418,29 @@ export default function FilmNerdHome() {
     { key: "admins-favorites",  title: "Admin's Favorites",  ids: ADMINS_FAVORITES_IDS },
     // a "popular-week" most dinamikus külön komponenssel jön
   ]), []);
+=======
+export default function FilmNerdHome() {
+  const [sections, setSections] = useState([])
+  const [secErr, setSecErr] = useState("")
+  const [secLoading, setSecLoading] = useState(true)
+
+  useEffect(() => {
+    let alive = true
+    ;(async () => {
+      try {
+        setSecLoading(true)
+        const s = await fetchSectionsFromDB()
+        if (alive) setSections((s || []).filter(x => x?.ids?.length))
+      } catch (e) {
+        if (alive) setSecErr(String(e))
+      } finally {
+        if (alive) setSecLoading(false)
+      }
+    })()
+    return () => { alive = false }
+  }, [])
+
+>>>>>>> b91a7bc283e843188e618488ecbbb928d391b0fc
 
   return (
     <div className="min-h-dvh bg-neutral-950 text-neutral-200">
@@ -331,7 +469,11 @@ export default function FilmNerdHome() {
         </main>
 
         <footer className="mt-12 border-t border-white/10 pt-6 text-xs text-neutral-500">
+<<<<<<< HEAD
           © {new Date().getFullYear()} FilmNerd.
+=======
+           © {new Date().getFullYear()} FilmNerd.
+>>>>>>> b91a7bc283e843188e618488ecbbb928d391b0fc
         </footer>
       </div>
 

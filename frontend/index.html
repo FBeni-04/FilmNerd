@@ -5,6 +5,7 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta http-equiv="Content-Security-Policy" content="
+<<<<<<< HEAD
       default-src 'self';
       connect-src 'self' http://localhost:8000 ws://localhost:5173 https://api.themoviedb.org;
       img-src 'self' data: https://image.tmdb.org https://i.ytimg.com;
@@ -17,6 +18,16 @@
     ">
 
 
+=======
+        default-src 'self';
+        img-src 'self' https://image.tmdb.org data:;
+        frame-src https://www.youtube.com https://www.youtube-nocookie.com https://player.vimeo.com;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.youtube.com https://www.youtube-nocookie.com;
+        connect-src 'self' https://api.themoviedb.org;
+        style-src 'self' 'unsafe-inline';
+    ">
+
+>>>>>>> b91a7bc283e843188e618488ecbbb928d391b0fc
     <title>filmnerd</title>
   </head>
   <body>
