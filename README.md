@@ -26,4 +26,5 @@ A FilmNerd webalkalmazást elsősorban az igazán nagy filmrajongóknak ajánlju
 [Trello board](https://trello.com/b/vzaLLd63/filmnerd)
 
 ## Adatbázis (jelenleg)
-<img width="1434" height="931" alt="db" src="https://github.com/user-attachments/assets/497ed91b-9d77-4423-aa1d-525100ea9355" />
+<img width="1302" height="654" alt="Untitled" src="https://github.com/user-attachments/assets/15d84f30-d495-4d98-a567-93a0858746e6" />
+
