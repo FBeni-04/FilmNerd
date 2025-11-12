@@ -64,7 +64,7 @@ FilmNerd is a web application where you can rate movies with **emojis** (instead
 
 ---
 
-## Data model (current)
+## Data model
 
 ![ERD](https://github.com/user-attachments/assets/2ef70e68-6b9e-438b-9558-b26c0eec136c)
 
@@ -216,9 +216,6 @@ See our active tasks:
 * For TMDB rate limits, cache lightweight responses server‑side.
 
 ---
-
-## Database
-<img width="1302" height="654" alt="Untitled" src="https://github.com/user-attachments/assets/2ef70e68-6b9e-438b-9558-b26c0eec136c" />
 
 ## License
 
