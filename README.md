@@ -12,7 +12,7 @@ A university project for the course **Software Development Methodologies**. We d
 
 ## What is FilmNerd?
 
-FilmNerd is a web application where you can rate movies with **emojis** (instead of hard numbers), follow and compare tastes, and discover people with similar favorites. When there’s a match, you can start a conversation via an in‑app **chat**.
+FilmNerd is a web application where you can rate movies with **emojis** (instead of hard numbers), follow and compare tastes, and discover people with similar favorites..
 
 ### Key capabilities
 
