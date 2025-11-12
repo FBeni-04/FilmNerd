@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
 from .views import (
     ReviewListCreateView,
     ReviewRetrieveUpdateDestroyView,
@@ -6,8 +7,15 @@ from .views import (
     LoginView,
     RegisterView,
     MeView,
-    FavouriteViewSet
+    FavouriteViewSet,
+    MovieListItemCreateView,
+    MovieListItemDestroyView,
+    MovieListViewSet
 )
+
+router = DefaultRouter()
+
+router.register(r'lists', MovieListViewSet, basename='movielist')
 
 urlpatterns = [
     # --- Auth ---
@@ -38,4 +46,14 @@ urlpatterns = [
         FavouriteViewSet.as_view({"delete": "destroy", "get": "retrieve"}),
         name="favourite-rud"
     ),
+
+    # --- CreatingList ---
+    path('lists/<int:list_pk>/items/', 
+         MovieListItemCreateView.as_view(), 
+         name='listitem-create'),
+         
+    path('lists/<int:list_pk>/items/<str:movie_id>/', 
+         MovieListItemDestroyView.as_view(), 
+         name='listitem-destroy'),
+    path('',include(router.urls)),
 ]

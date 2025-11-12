@@ -10,9 +10,11 @@ from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated
+from django.shortcuts import get_object_or_404
 
-from .models import Review, Favourite
-from .serializers import ReviewSerializer, RegisterSerializer, LoginSerializer, MeSerializer, FavouriteSerializer
+from .models import Review, Favourite, MovieList, MovieListItem
+from .serializers import (ReviewSerializer, RegisterSerializer, LoginSerializer, MeSerializer, 
+                          FavouriteSerializer, MovieListCreateUpdateSerializer, MovieListItemCreateSerializer, MovieListSerializer)
 from .permissions import IsOwnerOrReadOnly
 
 User = get_user_model()
@@ -173,3 +175,54 @@ def review_summary(request):
         "count": int(agg["count"] or 0),
         "avg": round((agg["avg"] or 0), 1),
     })
+
+#List Creating views
+
+class MovieListViewSet(viewsets.ModelViewSet):
+    permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
+
+    def get_queryset(self):
+        return MovieList.objects.filter(user=self.request.user)
+
+    def get_serializer_class(self):
+        if self.action in ['create', 'update', 'partial_update']:
+            return MovieListCreateUpdateSerializer
+        return MovieListSerializer
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class MovieListItemCreateView(generics.CreateAPIView):
+    serializer_class = MovieListItemCreateSerializer
+    permission_classes = [permissions.IsAuthenticated]
+
+    def perform_create(self, serializer):
+        movie_list = get_object_or_404(MovieList, pk=self.kwargs['list_pk'])
+        if movie_list.user != self.request.user:
+            raise permissions.PermissionDenied("You do not own this list.")
+        serializer.save(movie_list=movie_list)
+
+    def create(self, request, *args, **kwargs):
+        try:
+            return super().create(request, *args, **kwargs)
+        except Exception as e:
+            if 'unique_movie_in_list' in str(e):
+                return Response(
+                    {"error": "This movie is already in the list."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+            raise e
+
+
+class MovieListItemDestroyView(generics.DestroyAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get_object(self):
+        list_pk = self.kwargs['list_pk']
+        movie_id = self.kwargs['movie_id']
+        movie_list = get_object_or_404(MovieList, pk=list_pk)
+        if movie_list.user != self.request.user:
+            raise permissions.PermissionDenied("You do not own this list.")
+        item = get_object_or_404(MovieListItem, movie_list=movie_list, movie_id=movie_id)
+        return item
