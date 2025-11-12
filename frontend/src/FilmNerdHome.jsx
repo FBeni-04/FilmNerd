@@ -1,45 +1,102 @@
-/*
-FilmNerd – Letterboxd-szerű dark témás UI + carousel-strip + template navbar
-- Dark háttér, pasztell szöveg, poszter-fókusz
-- Scroll-snap alapú vízszintes "carousel" sávok bal/jobb gombokkal
-- Drag-to-scroll (egér lenyomva húzás), touch támogatás
-- Minimal dependency: React (+ Tailwind ajánlott), lucide-react opcionális
-*/
-
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { Star, ChevronLeft, ChevronRight, Film } from "lucide-react"; // ha nincs lucide: cseréld ★, ‹, ›, 🎬 karakterekre
+import {
+  FaChevronLeft,
+  FaChevronRight,
+  FaStar,
+} from "react-icons/fa6";
+import Navbar from "./components/Navbar";
+import AuthProvider, { useAuth, useAuthOptional } from "./components/AuthContext";
+import AuthModal from "./components/AuthModal";
+import { API_BASE } from "./lib/api";
 
-// --- Ideiglenes film-azonosítók (helykitöltő listák) ---
-const RECOMMENDED_IDS = [238, 550, 680, 155, 424];
-const POPULAR_WITH_FRIENDS_IDS = [603, 744, 1891, 807, 13];
-const ADMIN_FAVORITES_IDS = [497, 24428, 429, 27205, 122];
-const SAME_TASTES_IDS = [1124, 78, 920, 807, 429617];
+/**
+ * ==========================
+ *  CONFIG / CONSTANTS
+ * ==========================
+ */
+const RECOMMENDED_IDS = [238, 680, 550, 603, 27205, 155, 424, 278, 603692, 539];
+const FRIENDS_FAVORITES_IDS = [603, 11, 1891, 122, 424, 807, 1892, 603692, 98, 24428];
+const ADMINS_FAVORITES_IDS = [503919, 792307, 21484, 11167, 7452, 8321, 265195, 359940, 68718, 115];
 
-// --- TMDB kliens ---
 const TMDB_BASE = "https://api.themoviedb.org/3";
-const TMDB_IMG = { w342: (p) => `https://image.tmdb.org/t/p/w342${p}` };
+const TMDB_IMG = {
+  w92: (p) => `https://image.tmdb.org/t/p/w92${p}`,
+  w185: (p) => `https://image.tmdb.org/t/p/w185${p}`,
+  w342: (p) => `https://image.tmdb.org/t/p/w342${p}`,
+};
 const tmdbApiKey = (import.meta.env.VITE_TMDB_API_KEY || "").trim();
 
+const reviewSummaryCache = new Map(); // key: movieId, value: {count, avg}
+
+/** 1–10 pont → emoji */
+function ratingToEmoji(num) {
+  const n = Number(num);
+  if (!isFinite(n) || n <= 2) return "😡";
+  if (n <= 4) return "🙁";
+  if (n <= 6) return "😐";
+  if (n <= 8) return "🙂";
+  return "🤩";
+}
+
+/**
+ * ==========================
+ *  TMDB HELPERS
+ * ==========================
+ */
 const cache = new Map();
-async function fetchMovie(id) {
-  const key = `movie:${id}`;
-  if (cache.has(key)) return cache.get(key);
-  const url = `${TMDB_BASE}/movie/${id}?api_key=${tmdbApiKey}&language=hu-HU&append_to_response=credits`;
+const toTmdbId = (v) => {
+  const m = String(v ?? "").match(/^\d+/);
+  return m ? Number(m[0]) : null;
+};
+
+async function fetchMovie(sourceId) {
+  const tmdbId = toTmdbId(sourceId);
+  if (!tmdbId) throw new Error(`Invalid TMDB ID: ${sourceId}`);
+  const key = `movie:${tmdbId}`;
+  if (cache.has(key)) return { ...cache.get(key), _sourceId: sourceId };
+  const url = `${TMDB_BASE}/movie/${tmdbId}?api_key=${tmdbApiKey}&language=en-US&append_to_response=credits`;
   const res = await fetch(url);
   if (!res.ok) {
-    let msg = `TMDB hiba: ${res.status}`;
-    try { const j = await res.json(); if (j?.status_message) msg += ` – ${j.status_message}`; } catch {}
+    let msg = `TMDB error: ${res.status}`;
+    try {
+      const j = await res.json();
+      if (j?.status_message) msg += ` – ${j.status_message}`;
+    } catch {}
     throw new Error(msg);
   }
   const data = await res.json();
   cache.set(key, data);
-  return data;
-}
-async function fetchMovies(ids = []) {
-  return Promise.all(ids.map(async (id) => { try { return await fetchMovie(id); } catch (e) { return { id, error: String(e) }; } }));
+  return { ...data, _sourceId: sourceId };
 }
 
-// --- Segédek ---
+async function fetchMovies(ids = []) {
+  return Promise.all(
+    ids
+      .map((id) => ({ id, tmdbId: toTmdbId(id) }))
+      .filter(({ tmdbId }) => tmdbId != null)
+      .map(async ({ id }) => {
+        try {
+          return await fetchMovie(id);
+        } catch (e) {
+          return { id, _sourceId: id, error: String(e) };
+        }
+      })
+  );
+}
+
+async function fetchTrendingMovieIds(limit = 10) {
+  const url = `${TMDB_BASE}/trending/movie/week?api_key=${tmdbApiKey}&language=hu-HU`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Trending fetch failed (${res.status})`);
+  const j = await res.json();
+  return (j?.results || []).slice(0, limit).map((m) => m.id);
+}
+
+/**
+ * ==========================
+ *  SMALL UTILS / HOOKS
+ * ==========================
+ */
 const getYear = (s) => (s ? String(new Date(s).getFullYear()) : "");
 const topCast = (credits, n = 3) => (credits?.cast || []).slice(0, n).map((p) => p.name).join(", ");
 
@@ -50,33 +107,55 @@ function useHorizontalScroll() {
   const scrollLeft = useRef(0);
 
   const onMouseDown = (e) => {
-    const el = elRef.current; if (!el) return;
-    isDown.current = true; el.classList.add("dragging");
+    const el = elRef.current;
+    if (!el) return;
+    isDown.current = true;
+    el.classList.add("dragging");
     startX.current = e.pageX - el.offsetLeft;
     scrollLeft.current = el.scrollLeft;
   };
-  const onMouseLeave = () => { isDown.current = false; elRef.current?.classList.remove("dragging"); };
-  const onMouseUp = () => { isDown.current = false; elRef.current?.classList.remove("dragging"); };
+  const onMouseLeave = () => {
+    isDown.current = false;
+    elRef.current?.classList.remove("dragging");
+  };
+  const onMouseUp = () => {
+    isDown.current = false;
+    elRef.current?.classList.remove("dragging");
+  };
   const onMouseMove = (e) => {
-    const el = elRef.current; if (!el || !isDown.current) return;
+    const el = elRef.current;
+    if (!el || !isDown.current) return;
     e.preventDefault();
     const x = e.pageX - el.offsetLeft;
-    const walk = (x - startX.current) * 1.2; // érzékenység
+    const walk = (x - startX.current) * 1.2;
     el.scrollLeft = scrollLeft.current - walk;
   };
-
-  const scrollBy = (offset) => { const el = elRef.current; if (!el) return; el.scrollBy({ left: offset, behavior: "smooth" }); };
-
+  const scrollBy = (offset) => {
+    const el = elRef.current;
+    if (!el) return;
+    el.scrollBy({ left: offset, behavior: "smooth" });
+  };
   return { elRef, scrollBy, onMouseDown, onMouseLeave, onMouseUp, onMouseMove };
 }
 
-// --- UI alap elemek ---
+/**
+ * ==========================
+ *  UI BUILDING BLOCKS
+ * ==========================
+ */
 function Card({ children, className = "" }) {
   return <div className={`rounded-xl border border-white/10 bg-neutral-900 shadow-sm ${className}`}>{children}</div>;
 }
 function Badge({ children, className = "" }) {
-  return <span className={`inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-neutral-200 ${className}`}>{children}</span>;
+  return (
+    <span
+      className={`inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-2 py-0.5 text-xs text-neutral-200 ${className}`}
+    >
+      {children}
+    </span>
+  );
 }
+
 function IconButton({ children, onClick, ariaLabel }) {
   return (
     <button
@@ -84,40 +163,176 @@ function IconButton({ children, onClick, ariaLabel }) {
       onClick={onClick}
       className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-neutral-900/80 text-white backdrop-blur hover:bg-neutral-800/80 focus:outline-none"
     >
-      {children}
+      <span className="flex items-center justify-center">{children}</span>
     </button>
   );
 }
 
-function Skeleton({ className = "" }) { return <div className={`animate-pulse rounded-md bg-white/10 ${className}`} />; }
+function Skeleton({ className = "" }) {
+  return <div className={`animate-pulse rounded-md bg-white/10 ${className}`} />;
+}
 
+/**
+ * ==========================
+ *  MOVIE CARD (with favourite heart)
+ * ==========================
+ */
 function MovieCard({ movie }) {
   const poster = movie?.poster_path ? TMDB_IMG.w342(movie.poster_path) : null;
   const title = movie?.title || movie?.name || "Ismeretlen cím";
   const year = getYear(movie?.release_date);
-  const vote = movie?.vote_average ? movie.vote_average.toFixed(1) : "–";
+  const tmdbVote = movie?.vote_average != null ? Number(movie.vote_average) : null;
+
+  const sourceId = movie?._sourceId ?? movie?.id;
+  const auth = useAuthOptional();
+  const user = auth?.user;
+  const access = auth?.access;
+
+  const [summary, setSummary] = useState(() => reviewSummaryCache.get(String(sourceId)) || null);
+  const [isFav, setIsFav] = useState(false);
+  const [favLoading, setFavLoading] = useState(false);
+
+  // Saját átlag cache-ből / API-ból
+  useEffect(() => {
+    let alive = true;
+    const key = String(sourceId || "");
+    if (!key) return;
+
+    if (reviewSummaryCache.has(key)) {
+      setSummary(reviewSummaryCache.get(key));
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/reviews/summary/?movie_id=${encodeURIComponent(key)}`);
+        if (!res.ok) return;
+        const json = await res.json();
+        const val = { count: Number(json.count || 0), avg: Number(json.avg || 0) };
+        reviewSummaryCache.set(key, val);
+        if (alive) setSummary(val);
+      } catch {}
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [sourceId]);
+
+  // Kedvenc státusz lekérdezése
+  useEffect(() => {
+    let alive = true;
+    if (!user || !sourceId) {
+      setIsFav(false);
+      return;
+    }
+    (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/favourites/exists/?movie_id=${encodeURIComponent(sourceId)}`, {
+          headers: { Authorization: `Bearer ${access}` },
+        });
+        const j = res.ok ? await res.json() : { exists: false };
+        if (alive) setIsFav(Boolean(j.exists));
+      } catch {
+        if (alive) setIsFav(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [user?.id, access, sourceId]);
+
+  // Kedvenc toggle
+  async function toggleFav(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!user || !sourceId) return;
+    setFavLoading(true);
+    try {
+      if (isFav) {
+        const res = await fetch(`${API_BASE}/favourites/${encodeURIComponent(sourceId)}/`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${access}` },
+        });
+        if (res.ok || res.status === 204) setIsFav(false);
+      } else {
+        const res = await fetch(`${API_BASE}/favourites/`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${access}`,
+          },
+          body: JSON.stringify({ movie_id: String(sourceId) }),
+        });
+        if (res.ok || res.status === 400 || res.status === 409) setIsFav(true);
+      }
+    } finally {
+      setFavLoading(false);
+    }
+  }
+
+  // Megjelenített pontszám (1–10), saját átlag *2, különben TMDB
+  const displayVote10 = useMemo(() => {
+    if (summary && summary.count > 0) return Number((summary.avg * 2).toFixed(1));
+    return tmdbVote != null ? Number(tmdbVote.toFixed(1)) : null;
+  }, [summary, tmdbVote]);
+
   const cast = topCast(movie?.credits, 3);
+  const href = `/movie/${encodeURIComponent(sourceId)}`;
 
   return (
     <div className="snap-start">
-      <Card className="w-44 min-w-[11rem] md:w-48 md:min-w-[12rem] overflow-hidden transition-transform duration-200 hover:-translate-y-0.5 hover:shadow">
-        <div className="relative aspect-[2/3] bg-neutral-800">
-          {poster ? (
-            <img src={poster} alt={title} loading="lazy" className="h-full w-full object-cover" />
-          ) : (
-            <div className="flex h-full items-center justify-center text-sm text-neutral-400">Nincs poszter</div>
-          )}
-          <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-[10px] text-white">
-            <Star size={12} className="opacity-90" />
-            <span className="tabular-nums">{vote}</span>
+      <a href={href}>
+        <Card className="w-44 min-w-[11rem] md:w-48 md:min-w-[12rem] overflow-hidden transition-transform duration-200 hover:-translate-y-0.5 hover:shadow">
+          <div className="relative aspect-[2/3] bg-neutral-800">
+            {poster ? (
+              <img src={poster} alt={title} loading="lazy" className="h-full w-full object-cover" />
+            ) : (
+              <div className="flex h-full items-center justify-center text-sm text-neutral-400">No poster</div>
+            )}
+
+            {/* TOP RIGHT: favourite heart */}
+            {user && (
+              <button
+                onClick={toggleFav}
+                disabled={favLoading}
+                className="absolute right-2 top-2 rounded-full bg-black/60 p-1 hover:bg-black/80"
+                title={isFav ? "Eltávolítás a kedvencekből" : "Hozzáadás a kedvencekhez"}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className={`h-4 w-4 ${isFav ? "text-red-400 fill-red-500" : "text-white"}`}
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  fill={isFav ? "currentColor" : "none"}
+                  strokeWidth="2"
+                >
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
+                </svg>
+              </button>
+            )}
+
+            {/* TOP LEFT: emoji badge */}
+            <div
+              className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-black/70 px-2 py-1 text-[10px] text-white"
+              title={
+                summary && summary.count > 0
+                  ? `Saját átlag: ${(summary.avg * 2).toFixed(1)} / 10 (${summary.count} értékelés)`
+                  : `TMDB pontszám: ${tmdbVote != null ? tmdbVote.toFixed(1) : "–"} / 10`
+              }
+            >
+              <FaStar className="text-white text-xs" />
+              <span className="tabular-nums">{ratingToEmoji(displayVote10)}</span>
+            </div>
           </div>
-        </div>
-        <div className="p-3">
-          <div className="line-clamp-2 text-[13px] font-semibold text-neutral-100">{title}</div>
-          <div className="mt-1 text-[11px] text-neutral-400">{year}</div>
-          {cast && <div className="mt-2 line-clamp-2 text-[11px] text-neutral-300/80">{cast}</div>}
-        </div>
-      </Card>
+
+          <div className="p-3">
+            <div className="line-clamp-2 text-[13px] font-semibold text-neutral-100">{title}</div>
+            <div className="mt-1 text-[11px] text-neutral-400">{year}</div>
+            {cast && <div className="mt-2 line-clamp-2 text-[11px] text-neutral-300/80">{cast}</div>}
+          </div>
+        </Card>
+      </a>
     </div>
   );
 }
@@ -146,7 +361,8 @@ function MovieStrip({ title, subtitle, movieIds }) {
   useEffect(() => {
     let alive = true;
     (async () => {
-      setLoading(true); setError("");
+      setLoading(true);
+      setError("");
       try {
         const res = await fetchMovies(movieIds);
         if (alive) setData(res);
@@ -156,7 +372,9 @@ function MovieStrip({ title, subtitle, movieIds }) {
         if (alive) setLoading(false);
       }
     })();
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, [movieIds?.join(",")]);
 
   return (
@@ -170,13 +388,12 @@ function MovieStrip({ title, subtitle, movieIds }) {
       </div>
 
       <div className="relative">
-        {/* szélek elhalványítása */}
         <div className="pointer-events-none absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-neutral-950 to-transparent" />
         <div className="pointer-events-none absolute inset-y-0 right-0 w-24 bg-gradient-to-l from-neutral-950 to-transparent" />
 
         <div className="flex items-center gap-3">
-          <IconButton onClick={() => scrollBy(-480)} ariaLabel="Görgess balra">
-            <ChevronLeft size={16} />
+          <IconButton onClick={() => scrollBy(-480)} ariaLabel="Scroll left">
+            <FaChevronLeft className="text-neutral-100" />
           </IconButton>
 
           <div
@@ -192,81 +409,123 @@ function MovieStrip({ title, subtitle, movieIds }) {
             {!loading && !error && data.map((m) => <MovieCard key={m.id || Math.random()} movie={m} />)}
           </div>
 
-          <IconButton onClick={() => scrollBy(480)} ariaLabel="Görgess jobbra"><ChevronRight size={16} /></IconButton>
+          <IconButton onClick={() => scrollBy(480)} ariaLabel="Scroll right">
+            <FaChevronRight className="text-neutral-100" />
+          </IconButton>
         </div>
       </div>
     </section>
   );
 }
 
-function Navbar() {
-  return (
-    <header className="sticky top-0 z-20 border-b border-white/10 bg-neutral-950/80 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-        <div className="flex items-center gap-2 text-neutral-100">
-          <Film size={18} className="opacity-90" />
-          <span className="text-lg font-extrabold tracking-tight">FilmNerd</span>
+function PopularThisWeekStrip() {
+  const [ids, setIds] = useState([]);
+  const [err, setErr] = useState("");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        setLoading(true);
+        setErr("");
+        const list = await fetchTrendingMovieIds(10);
+        if (alive) setIds(list);
+      } catch (e) {
+        if (alive) setErr(String(e?.message || e));
+      } finally {
+        if (alive) setLoading(false);
+      }
+    })();
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  if (loading) {
+    return (
+      <section className="relative">
+        <div className="mb-3 flex items-baseline justify-between pr-12">
+          <div>
+            <h2 className="text-lg font-bold tracking-tight text-neutral-100">Popular This Week</h2>
+            <p className="text-sm text-neutral-400">Friss heti trendek a TMDB-ről</p>
+          </div>
+          <Badge>…</Badge>
         </div>
-        <nav className="hidden gap-6 text-sm text-neutral-300 md:flex">
-          <a className="hover:text-white" href="#">Home</a>
-          <a className="hover:text-white" href="#">Lists</a>
-          <a className="hover:text-white" href="#">Search</a>
-          <a className="hover:text-white" href="#">Profil</a>
-        </nav>
-        <div className="ml-4 hidden md:block">
-          <input
-            className="w-56 rounded-full border border-white/10 bg-neutral-900 px-3 py-1.5 text-sm text-neutral-200 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
-            placeholder="Film, rendező, színész…"
-          />
-        </div>
+        <div className="flex gap-4">{Array.from({ length: 8 }).map((_, i) => <MovieCardSkeleton key={i} />)}</div>
+      </section>
+    );
+  }
+
+  if (err) {
+    return (
+      <div className="rounded-xl border border-white/10 bg-neutral-900 p-4 text-red-400 text-sm">
+        Nem sikerült lekérni a heti népszerűeket: {err}
       </div>
-    </header>
-  );
+    );
+  }
+
+  return <MovieStrip title="Popular This Week" movieIds={ids} />;
 }
 
+/**
+ * ==========================
+ *  PAGE
+ * ==========================
+ */
 export default function FilmNerdHome() {
-  const sections = useMemo(() => ([
-    { key: "rec", title: "For you", ids: RECOMMENDED_IDS },
-    { key: "friends", title: "Popular with friends", ids: POPULAR_WITH_FRIENDS_IDS },
-    { key: "admin", title: "Admins' favourite", ids: ADMIN_FAVORITES_IDS },
-    { key: "taste", title: "Popular this week", ids: SAME_TASTES_IDS }
-  ]), []);
+  const sections = useMemo(
+    () => [
+      { key: "recommended", title: "Recommended", ids: RECOMMENDED_IDS },
+      { key: "friends-favorites", title: "Friends' Favorites", ids: FRIENDS_FAVORITES_IDS },
+      { key: "admins-favorites", title: "Admin's Favorites", ids: ADMINS_FAVORITES_IDS },
+    ],
+    []
+  );
+
+  const [authOpen, setAuthOpen] = useState(false);
 
   return (
-    <div className="min-h-dvh bg-neutral-950 text-neutral-200">
-      <Navbar />
+    <AuthProvider>
+      <div className="min-h-dvh bg-neutral-950 text-neutral-200">
+        <Navbar />
 
-      <div className="mx-auto max-w-7xl px-4 py-8">
-        <header className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-extrabold tracking-tight text-neutral-100">FilmNerd</h1>
-          </div>
-        </header>
-
-        <main className="space-y-10">
-          {tmdbApiKey ? (
-            sections.map((s) => (
-              <MovieStrip key={s.key} title={s.title} subtitle={s.subtitle} movieIds={s.ids} />
-            ))
-          ) : (
-            <div className="rounded-xl border border-white/10 bg-neutral-900 p-6 text-sm text-neutral-200">
-              Hiányzik a TMDB API kulcs (.env → <code>VITE_TMDB_API_KEY</code>). Add meg, majd frissítsd az oldalt.
+        <div className="mx-auto max-w-7xl px-4 py-8">
+          <header className="mb-8 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-extrabold tracking-tight text-neutral-100">FilmNerd</h1>
             </div>
-          )}
-        </main>
+          </header>
 
-        <footer className="mt-12 border-t border-white/10 pt-6 text-xs text-neutral-500">
-          TMDB adatforrás – © {new Date().getFullYear()} FilmNerd.
-        </footer>
+          <main className="space-y-10">
+            {tmdbApiKey ? (
+              <>
+                {sections.map((s) => (
+                  <MovieStrip key={s.key} title={s.title} subtitle={s.subtitle} movieIds={s.ids} />
+                ))}
+                <PopularThisWeekStrip />
+              </>
+            ) : (
+              <div className="rounded-xl border border-white/10 bg-neutral-900 p-6 text-sm text-neutral-200">
+                Missing TMDB API key (.env → <code>VITE_TMDB_API_KEY</code>). Add it and refresh the page.
+              </div>
+            )}
+          </main>
+
+          <footer className="mt-12 border-t border-white/10 pt-6 text-xs text-neutral-500">
+            © {new Date().getFullYear()} FilmNerd.
+          </footer>
+        </div>
+
+        <style>{`
+          .no-scrollbar::-webkit-scrollbar { display: none; }
+          .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+          .carousel.dragging { cursor: grabbing; }
+          .carousel { cursor: grab; }
+        `}</style>
+
+        <AuthModal show={authOpen} onClose={() => setAuthOpen(false)} />
       </div>
-
-      {/* no-scrollbar + drag vizuális segédstílus */}
-      <style>{`
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .carousel.dragging { cursor: grabbing; }
-        .carousel { cursor: grab; }
-      `}</style>
-    </div>
+    </AuthProvider>
   );
 }
