@@ -36,7 +36,7 @@ export default function Navbar() {
             <Link to="/" className="hover:text-white">
               Home
             </Link>
-            <a className="hover:text-white" href="#">Lists</a>
+            <Link to="/lists" className="hover:text-white">Lists</Link>
             <a className="hover:text-white" href="#">Search</a>
             <a className="hover:text-white" href="#">Profile</a>
           </nav>
