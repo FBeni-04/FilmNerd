@@ -68,8 +68,6 @@ FilmNerd is a web application where you can rate movies with **emojis** (instead
 
 ![ERD](https://github.com/user-attachments/assets/2ef70e68-6b9e-438b-9558-b26c0eec136c)
 
-> The schema includes Users, Movies, People (Actors/Directors), EmojiRatings, Reactions (Like/Dislike), Lists, Favorites, Watchlist, and basic Chat entities. Movies/People store TMDB IDs so we can hydrate details from TMDB when needed.
-
 ---
 
 ## How to run – Backend (Django + DRF)
