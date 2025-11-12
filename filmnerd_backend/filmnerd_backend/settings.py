@@ -68,6 +68,13 @@ ROOT_URLCONF = "filmnerd_backend.urls"
 
 AUTH_USER_MODEL = "reviews.User"
 
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
+
+DATABASES['default']['TEST'] = {
+    'MIRROR': 'default'
+}
+
+
 SIMPLE_JWT = { "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
                "REFRESH_TOKEN_LIFETIME": timedelta(days=7) }
 
