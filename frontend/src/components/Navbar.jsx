@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { FaBars, FaFilm } from "react-icons/fa6";
+import { FaBars, FaFilm } from "react-icons/fa";
 import SearchBox from "./SearchBox";
 import AuthModal from "./AuthModal";
 import { useAuth } from "./AuthContext";
@@ -11,23 +11,29 @@ export default function Navbar() {
   const { user, logout } = useAuth();
 
   return (
-    <header className="sticky top-0 z-20 border-b border-white/10 bg-neutral-950/80 backdrop-blur">
+    <header className="sticky top-0 z-[999] border-b border-white/10 bg-neutral-950/80 backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 py-3">
 
         <div className="flex items-center">
 
           {/* BAL oldal */}
-          <div className="flex items-center gap-2 text-neutral-100">
+          <div className="flex items-center gap-2 text-neutral-100 flex-nowrap">
             <button
               type="button"
-              className="md:hidden flex h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-neutral-900/80 text-white"
+              className="block md:hidden shrink-0 h-10 w-10 items-center justify-center
+                rounded-full border border-white/30 bg-neutral-900 text-white"
+                id = "navbar-burger-button"
               onClick={() => setOpen(!open)}
             >
-              <FaBars className="h-5 w-5" />
+              <FaBars size={20} />
             </button>
-            <FaFilm className="h-5 w-5" />
-            <span className="text-lg font-extrabold tracking-tight">FilmNerd</span>
+
+            <FaFilm className="h-5 w-5 shrink-0" />
+            <span className="text-lg font-extrabold tracking-tight">
+              FilmNerd
+            </span>
           </div>
+
 
           {/* KÖZÉP */}
           <nav className="hidden md:flex gap-6 text-sm text-neutral-300 mx-auto">

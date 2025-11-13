@@ -251,18 +251,22 @@
 
                 {/* INFO */}
                 <div className="flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <h1 className="text-3xl font-extrabold tracking-tight text-white">
-                      {data.title} <span className="text-neutral-400">{year && `(${year})`}</span>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                      {data.title}{" "}
+                      <span className="text-neutral-400">
+                        {year && `(${year})`}
+                      </span>
                     </h1>
 
                     {/* Kedvenc gomb */}
                     <button
                       onClick={toggleFavourite}
                       disabled={favLoading}
-                      className={`mt-1 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition
-                        ${isFav ? "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
-                                : "border-white/15 bg-white/5 text-neutral-200 hover:bg-white/10"}`}
+                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition
+                        ${isFav
+                          ? "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                          : "border-white/15 bg-white/5 text-neutral-200 hover:bg-white/10"}`}
                       title={isFav ? "Delete Favourite" : "Add Favourite"}
                     >
                       <svg
@@ -273,12 +277,11 @@
                         fill={isFav ? "currentColor" : "none"}
                         strokeWidth="2"
                       >
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
                       </svg>
                       {isFav ? "Favourite" : "Add Favourite"}
                     </button>
                   </div>
-
                   {data.tagline && (
                     <p className="mt-1 text-neutral-400 italic">{data.tagline}</p>
                   )}
