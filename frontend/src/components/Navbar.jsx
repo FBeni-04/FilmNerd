@@ -76,9 +76,12 @@ export default function Navbar() {
         {open && (
           <div className="mt-3 space-y-3 rounded-xl border border-white/10 bg-neutral-900 p-3 shadow-xl md:hidden">
             <nav className="grid gap-2 text-sm">
-              <a className="rounded px-3 py-2 hover:bg-white/5" href="#">Home</a>
+              <Link to="/" className="rounded px-3 py-2 hover:bg-white/5">
+                Home
+              </Link>
               <a className="rounded px-3 py-2 hover:bg-white/5" href="#">Lists</a>
               <a className="rounded px-3 py-2 hover:bg-white/5" href="#">Search</a>
+              <a className="rounded px-3 py-2 hover:bg-white/5" href="#">Profile</a>
 
               {user ? (
                 <button

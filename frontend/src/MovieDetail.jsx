@@ -3,6 +3,7 @@
   import AuthModal from "./components/AuthModal";
   import { useAuthOptional } from "./components/AuthContext";
   import { API_BASE } from "./lib/api";
+  import { Link } from "react-router-dom";
   import Navbar from "./components/Navbar";
 
   const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -48,6 +49,8 @@
       return 0;
     })[0] || null;
   }
+
+
 
   // --- 1–10 skálán emoji ---
   function ratingToEmoji(num) {
@@ -212,6 +215,20 @@
       { key: "buy",      label: "Buy" },
     ];
 
+    const directors = useMemo(() => {
+      const crew = data?.credits?.crew || [];
+      const dirs = crew.filter(c => c.job === "Director");
+      const uniq = [];
+      const seen = new Set();
+      for (const d of dirs) {
+        if (!seen.has(d.id)) {
+          seen.add(d.id);
+          uniq.push(d);
+        }
+      }
+      return uniq;
+    }, [data]);
+
     return (
 
       <div className="min-h-dvh bg-neutral-950 text-neutral-200">
@@ -282,9 +299,6 @@
                       {isFav ? "Favourite" : "Add Favourite"}
                     </button>
                   </div>
-                  {data.tagline && (
-                    <p className="mt-1 text-neutral-400 italic">{data.tagline}</p>
-                  )}
 
                   <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-neutral-300">
                     {runtime && <span>{runtime}</span>}
@@ -315,7 +329,7 @@
                     <p className="mt-4 max-w-3xl text-neutral-200/90">{data.overview}</p>
                   )}
 
-                  {/* SZEREPLŐK */}
+                {/* SZEREPLŐK */}
                   <div className="mt-6">
                     <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
                       Cast
@@ -324,7 +338,11 @@
                       {(data.credits?.cast || []).slice(0, 5).map((p) => {
                         const photo = p.profile_path ? TMDB_IMG.w185(p.profile_path) : null;
                         return (
-                          <div key={p.cast_id || p.credit_id} className="w-32 shrink-0">
+                          <Link
+                            key={p.cast_id || p.credit_id || p.id}
+                            to={`/actor/${p.id}`}
+                            className="w-32 shrink-0 hover:-translate-y-1 hover:shadow-lg transition"
+                          >
                             <div className="aspect-[2/3] overflow-hidden rounded-lg border border-white/10 bg-neutral-900">
                               {photo ? (
                                 <img src={photo} className="h-full w-full object-cover" />
@@ -340,12 +358,33 @@
                             <div className="line-clamp-2 text-[11px] text-neutral-400">
                               {p.character}
                             </div>
-                          </div>
+                          </Link>
                         );
                       })}
                     </div>
                   </div>
+
                 </div>
+                  {/* Rendező(k) */}
+                  {directors.length > 0 && (
+                    <div className="mt-1 text-sm text-neutral-200">
+                      <span className="font-semibold text-neutral-100">
+                        Director{directors.length > 1 ? "s" : ""}:
+                      </span>{" "}
+                      {directors.map((d, idx) => (
+                        <span key={d.id}>
+                          {idx > 0 && ", "}
+                          <Link
+                            to={`/director/${d.id}`}
+                            className="hover:underline hover:text-blue-300"
+                          >
+                          {d.name}
+                          </Link>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
               </div>
 
               {/* TRAILER */}
