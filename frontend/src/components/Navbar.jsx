@@ -83,7 +83,9 @@ export default function Navbar() {
               </Link>
               <a className="rounded px-3 py-2 hover:bg-white/5" href="#">Lists</a>
               <a className="rounded px-3 py-2 hover:bg-white/5" href="#">Search</a>
-              <a className="rounded px-3 py-2 hover:bg-white/5" href="#">Profile</a>
+              <a className="hover:text-white" href="#">
+                {user ? user.username : "Profile"}
+              </a>
 
               {user ? (
                 <button
