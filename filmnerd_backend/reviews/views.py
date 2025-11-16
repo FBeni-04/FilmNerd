@@ -66,12 +66,17 @@ class ReviewListCreateView(generics.ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        # JOIN a userre, legújabb elöl
-        qs = Review.objects.select_related("user").order_by("-created_at")
+        qs = Review.objects.all()
         movie_id = self.request.query_params.get("movie_id")
+        mine = self.request.query_params.get("mine")
+
         if movie_id:
             qs = qs.filter(movie_id=movie_id)
-        return qs
+
+        if mine in ("1", "true", "True") and self.request.user.is_authenticated:
+            qs = qs.filter(user=self.request.user)
+
+        return qs.order_by("-created_at")
 
     @transaction.atomic
     def perform_create(self, serializer):

@@ -44,9 +44,9 @@ export default function Navbar() {
             </Link>
             <Link to="/lists" className="hover:text-white">Lists</Link>
             <a className="hover:text-white" href="#">Search</a>
-            <a className="hover:text-white" href="#">
+            <Link to="/profile" className="hover:text-white">
               {user ? user.username : "Profile"}
-            </a>
+            </Link>
           </nav>
 
           {/* JOBB oldal: Search + Auth */}
@@ -81,11 +81,11 @@ export default function Navbar() {
               <Link to="/" className="rounded px-3 py-2 hover:bg-white/5">
                 Home
               </Link>
-              <a className="rounded px-3 py-2 hover:bg-white/5" href="#">Lists</a>
+              <a className="  rounded px-3 py-2 hover:bg-white/5" href="#">Lists</a>
               <a className="rounded px-3 py-2 hover:bg-white/5" href="#">Search</a>
-              <a className="hover:text-white" href="#">
+              <Link to="/profile" className="hover:text-white">
                 {user ? user.username : "Profile"}
-              </a>
+              </Link>
 
               {user ? (
                 <button

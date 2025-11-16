@@ -9,7 +9,7 @@ import SearchBox from './components/SearchBox';
 // This is a minimal TMDB API fetcher for getting movie details
 // We'll need this to show posters and titles for the movie_ids
 const TMDB_BASE = "https://api.themoviedb.org/3";
-const TMDB_IMG_W185 = (p) => `https://image.tmdb.org/t/p/w185${p}`;
+const TMDB_IMG_W185 = (p) => `https://image.tmdb.org/t/p/w500${p}`;
 const tmdbApiKey = import.meta.env.VITE_TMDB_API_KEY;
 
 // Fetches details for a single movie from TMDB

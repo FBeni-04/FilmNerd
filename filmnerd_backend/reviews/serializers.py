@@ -59,8 +59,8 @@ class ReviewSerializer(serializers.ModelSerializer):
 class FavouriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favourite
-        fields = ["id", "user_id", "movie_id", "created_at"]
-        read_only_fields = ["id", "user_id", "created_at"]
+        fields = ["id", "user_id", "movie_id"]
+        read_only_fields = ["id", "user_id"]
 
     def validate_movie_id(self, v):
         v = (v or "").strip()
