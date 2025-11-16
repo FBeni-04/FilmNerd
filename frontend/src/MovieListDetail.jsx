@@ -33,11 +33,12 @@ const fetchMovieData = async (movieId) => {
 
 export default function MovieListDetail() {
   const { listId } = useParams(); // Get the list ID from the URL
-  const { user, access, showLogin } = useAuth();
+  const { user, access } = useAuth();
   const [list, setList] = useState(null);
   const [items, setItems] = useState([]); // State to hold movie details
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [authOpen, setAuthOpen] = useState(false);
 
   const [isAdding, setIsAdding] = useState(false);
   const [addError, setAddError] = useState(''); // Separate error for the add box
@@ -148,10 +149,15 @@ export default function MovieListDetail() {
         <Navbar />
         <div className="mx-auto max-w-7xl px-4 py-10 text-center">
           <p className="mt-4 text-neutral-400">
-            Please <b>Login</b> to create and view your movie lists.
+            Please{' '}
+            {/* --- 3. Change this to use local state --- */}
+            <button onClick={() => setAuthOpen(true)} className="text-sky-400 underline hover:text-sky-300">
+              Login
+            </button>{' '}
+            to view your movie lists.
           </p>
         </div>
-        <AuthModal />
+        <AuthModal show={authOpen} onClose={() => setAuthOpen(false)}/>
       </div>
     );
   }
@@ -159,7 +165,7 @@ export default function MovieListDetail() {
 return (
     <div className="min-h-dvh bg-neutral-950 text-neutral-200">
       <Navbar />
-      <AuthModal />
+      <AuthModal show={authOpen} onClose={() => setAuthOpen(false)}/>
       <div className="mx-auto max-w-7xl px-4 py-10">
         {loading && <p className="text-neutral-400">Loading list...</p>}
         {error && <p className="text-red-400">{error}</p>}

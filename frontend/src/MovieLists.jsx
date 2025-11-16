@@ -6,13 +6,15 @@ import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
 
 export default function MovieLists() {
-  const { user, access, showLogin } = useAuth();
+  const { user, access } = useAuth();
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [newListName, setNewListName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  const [authOpen, setAuthOpen] = useState(false);
 
   // Function to fetch the user's lists from the backend
   const fetchLists = useCallback(async () => {
@@ -122,10 +124,15 @@ const handleCreateList = async (e) => {
         <div className="mx-auto max-w-7xl px-4 py-10 text-center">
           <h1 className="text-2xl font-bold text-white">My Lists</h1>
           <p className="mt-4 text-neutral-400">
-            Please <b>Login</b> to create and view your movie lists.
+            Please{' '}
+            {/* --- 3. Change this to use local state --- */}
+            <button onClick={() => setAuthOpen(true)} className="text-sky-400 underline hover:text-sky-300">
+              Login
+            </button>{' '}
+            to create and view your movie lists.
           </p>
         </div>
-        <AuthModal />
+        <AuthModal show={authOpen} onClose={() => setAuthOpen(false)} />
       </div>
     );
   }
@@ -134,7 +141,7 @@ const handleCreateList = async (e) => {
   return (
     <div className="min-h-dvh bg-neutral-950 text-neutral-200">
       <Navbar />
-      <AuthModal />
+      <AuthModal show={authOpen} onClose={() => setAuthOpen(false)}/>
       <div className="mx-auto max-w-7xl px-4 py-10">
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-extrabold text-white">My Movie Lists</h1>
