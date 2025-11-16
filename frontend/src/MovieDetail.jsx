@@ -5,6 +5,7 @@
   import { API_BASE } from "./lib/api";
   import { Link } from "react-router-dom";
   import Navbar from "./components/Navbar";
+  import AddToListModel from "./components/AddToListModel";
 
   const TMDB_BASE = "https://api.themoviedb.org/3";
   const TMDB_IMG = {
@@ -75,6 +76,8 @@
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
     const [showTrailer, setShowTrailer] = useState(false);
+
+    const [addToListOpen, setAddToListOpen] = useState(false);
 
     // Saját review-összegzés (count, avg[1–5]) → ×2
     const [revSummary, setRevSummary] = useState(null);
@@ -277,15 +280,16 @@
                     </h1>
 
                     {/* Kedvenc gomb */}
-                    <button
-                      onClick={toggleFavourite}
-                      disabled={favLoading}
-                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition
-                        ${isFav
-                          ? "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
-                          : "border-white/15 bg-white/5 text-neutral-200 hover:bg-white/10"}`}
-                      title={isFav ? "Delete Favourite" : "Add Favourite"}
-                    >
+
+                      <button
+                        onClick={toggleFavourite}
+                        disabled={favLoading}
+                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition
+                          ${isFav
+                            ? "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                            : "border-white/15 bg-white/5 text-neutral-200 hover:bg-white/10"}`}
+                        title={isFav ? "Delete Favourite" : "Add Favourite"}
+                      >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className={`h-4 w-4 ${isFav ? "text-red-400 fill-red-500" : "text-neutral-200"}`}
@@ -297,7 +301,15 @@
                         <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
                       </svg>
                       {isFav ? "Favourite" : "Add Favourite"}
-                    </button>
+                    
+                      </button>
+                      <button
+                        onClick={() => {setAddToListOpen(true);}} // Open new model
+                        className="iinline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition"
+                      >
+                        Add to List
+                      </button>
+
                   </div>
 
                   <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-neutral-300">
@@ -432,6 +444,17 @@
               {/* Reviews + Auth */}
               <ReviewBox movieId={id} onRequireLogin={() => setAuthOpen(true)} />
               <AuthModal show={authOpen} onClose={() => setAuthOpen(false)} />
+
+              {/* Add to list modal */}
+              <AddToListModel 
+                show={addToListOpen} 
+                onClose={() => setAddToListOpen(false)} 
+                movieId={id} 
+                onRequireLogin={() => {
+                  setAddToListOpen(false); // Close this modal
+                  setAuthOpen(true);      // Open the login modal
+                }}
+              />
 
               {/* WHERE TO WATCH */}
               <div className="mt-10">
