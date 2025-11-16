@@ -12,6 +12,7 @@ export default function MovieLists() {
   const [error, setError] = useState('');
   const [newListName, setNewListName] = useState('');
   const [isCreating, setIsCreating] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Function to fetch the user's lists from the backend
   const fetchLists = useCallback(async () => {
@@ -66,7 +67,7 @@ const handleCreateList = async (e) => {
 
       setNewListName('');
       
-      // --- 4. THIS IS THE FIX ---
+
       // We must 'await' the fetchLists() call to ensure
       // it completes before we set isCreating back to false.
       await fetchLists(); 
@@ -75,6 +76,41 @@ const handleCreateList = async (e) => {
       setError(err.message);
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  // Function to handle deletion of a list
+  const handleDeleteList = async (listId, listName) => {
+    if (!access) return;
+
+    // Optional: Add a confirmation dialog
+    if (!window.confirm(`Are you sure you want to delete the list "${listName}"?`)) {
+      return;
+    }
+
+    setIsDeleting(true); // Indicate deletion is in progress
+    setError(''); // Clear any previous errors
+
+    try {
+      const res = await fetch(`${API_BASE}/lists/${listId}/`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${access}`,
+        },
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || 'Failed to delete list');
+      }
+
+      // If successful, re-fetch the lists to update the UI
+      await fetchLists();
+
+    } catch (err) {
+      setError(`Error deleting list: ${err.message}`);
+    } finally {
+      setIsDeleting(false); // Reset deletion status
     }
   };
 
@@ -137,8 +173,8 @@ const handleCreateList = async (e) => {
           <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             {lists.map((list) => (
               // Wrap the div in a Link component
+              <div key={list.id} className="relative">
               <Link
-                key={list.id}
                 to={`/list/${list.id}`} // Link to the new detail page
                 className="block rounded-lg border border-neutral-800 bg-neutral-900 p-4 transition hover:bg-neutral-800/60"
               >
@@ -147,6 +183,19 @@ const handleCreateList = async (e) => {
                   {list.items.length} {list.items.length <= 1 ? 'Film' : 'Films'}
                 </p>
               </Link>
+              <button
+                  onClick={(e) => {
+                    e.preventDefault(); // Prevent Link from triggering
+                    e.stopPropagation(); // Stop event bubbling
+                    handleDeleteList(list.id, list.name);
+                  }}
+                  className="absolute top-4 right-4 z-10 text-red-400 hover:text-red-600"
+                  title={`Delete list "${list.name}"`}
+                  disabled={isDeleting} // Disable button while deletion is in progress
+                >
+                  &times;
+                </button>
+              </div>
             ))}
           </div>
         </div>
