@@ -44,7 +44,9 @@ export default function Navbar() {
             </Link>
             <Link to="/lists" className="hover:text-white">Lists</Link>
             <a className="hover:text-white" href="#">Search</a>
-            <a className="hover:text-white" href="#">Profile</a>
+            <a className="hover:text-white" href="#">
+              {user ? user.username : "Profile"}
+            </a>
           </nav>
 
           {/* JOBB oldal: Search + Auth */}
