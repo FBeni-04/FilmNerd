@@ -4,6 +4,7 @@ import { useAuth } from './components/AuthContext';
 import { API_BASE } from './lib/api';
 import Navbar from './components//Navbar';
 import AuthModal from './components/AuthModal';
+import SearchBox from './components/SearchBox';
 
 // This is a minimal TMDB API fetcher for getting movie details
 // We'll need this to show posters and titles for the movie_ids
@@ -37,6 +38,9 @@ export default function MovieListDetail() {
   const [items, setItems] = useState([]); // State to hold movie details
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
+  const [isAdding, setIsAdding] = useState(false);
+  const [addError, setAddError] = useState(''); // Separate error for the add box
 
   // Fetches the list details AND the details for each movie in it
   const fetchListDetails = useCallback(async () => {
@@ -100,6 +104,43 @@ export default function MovieListDetail() {
     }
   };
 
+  //Function to add a movie to the list
+  const handleAddItem = async (movieId) => {
+    if (!access || !listId || !movieId) return;
+
+    setIsAdding(true);
+    setAddError(''); // Clear previous add errors
+
+    try {
+      const res = await fetch(`${API_BASE}/lists/${listId}/items/`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${access}`,
+        },
+        body: JSON.stringify({ movie_id: String(movieId) }),
+      });
+
+      if (!res.ok) {
+        const errData = await res.json();
+        // Handle the "already in list" error from our backend
+        if (errData.error && errData.error.includes("already in the list")) {
+          setAddError("This movie is already in the list.");
+        } else {
+          throw new Error(errData.detail || 'Failed to add item');
+        }
+      } else {
+        // Success! Refresh the list to show the new item
+        await fetchListDetails();
+      }
+
+    } catch (err) {
+      setAddError(err.message);
+    } finally {
+      setIsAdding(false);
+    }
+  };
+
   // Show login prompt if user is not logged in
   if (!user) {
     return (
@@ -107,11 +148,7 @@ export default function MovieListDetail() {
         <Navbar />
         <div className="mx-auto max-w-7xl px-4 py-10 text-center">
           <p className="mt-4 text-neutral-400">
-            Please{' '}
-            <button onClick={showLogin} className="text-sky-400 underline hover:text-sky-300">
-              log in
-            </button>{' '}
-            to view your list.
+            Please <b>Login</b> to create and view your movie lists.
           </p>
         </div>
         <AuthModal />
@@ -119,7 +156,7 @@ export default function MovieListDetail() {
     );
   }
 
-  return (
+return (
     <div className="min-h-dvh bg-neutral-950 text-neutral-200">
       <Navbar />
       <AuthModal />
@@ -130,6 +167,15 @@ export default function MovieListDetail() {
         {list && (
           <>
             <h1 className="text-3xl font-extrabold text-white">{list.name}</h1>
+            
+            {/* --- 4. Add the SearchBox and error display --- */}
+            <div className="mt-8 max-w-md">
+              <h2 className="mb-2 text-sm font-semibold text-neutral-300">Add a film to this list</h2>
+              {/* Pass the handleAddItem function to onSelect */}
+              <SearchBox onSelect={(movieId) => handleAddItem(movieId)} />
+              {isAdding && <p className="mt-2 text-sm text-sky-400">Adding movie...</p>}
+              {addError && <p className="mt-2 text-sm text-yellow-400">{addError}</p>}
+            </div>
             
             <div className="mt-8 grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
               {items.map(movie => (
@@ -147,7 +193,7 @@ export default function MovieListDetail() {
                   </Link>
                   <button
                     onClick={() => handleRemoveItem(movie.id)}
-                    className="absolute top-1 right-1 z-10 h-6 w-6 rounded-full bg-black/60 text-neutral-300 transition hover:bg-red-600 hover:text-white"
+                    className="absolute top-1 right-1  "
                     title="Remove from list"
                   >
                     &times;
