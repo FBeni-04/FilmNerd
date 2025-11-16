@@ -375,7 +375,7 @@ export default function ProfilePage() {
                           <div className="flex-1">
                             <div className="flex justify-between items-start mb-1 gap-2">
                               <Link
-                                to={`/movie/${rev.slug}`}
+                                to={`/movie/${rev.movie_id}`}
                                 className="text-sm text-neutral-100 font-semibold line-clamp-2 hover:text-white"
                               >
                                 {rev.title}
