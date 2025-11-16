@@ -3,7 +3,6 @@ import FilmNerdHome from "./FilmNerdHome.jsx";
 import MovieDetail, { parseMovieSlug } from "./MovieDetail.jsx";
 import MovieLists from "./MovieLists";
 import MovieListDetail from "./MovieListDetail";
-import MovieDetail from "./MovieDetail.jsx"; 
 import DirectorDetail from "./DirectorDetail.jsx";
 import ActorDetail from "./ActorDetail.jsx";
 
