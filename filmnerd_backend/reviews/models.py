@@ -49,3 +49,34 @@ class Favourite(models.Model):
 
     def __str__(self):
         return f"Favourite(user={self.user_id}, movie={self.movie_id})"
+
+#for Creating list
+class MovieList(models.Model):
+    
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="movie_lists")
+    name = models.CharField(max_length=100)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "name"], name="unique_list_name_per_user")
+        ]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"MovieList(user={self.user.username}, name={self.name})"
+
+class MovieListItem(models.Model):
+    
+    movie_list = models.ForeignKey(MovieList, on_delete=models.CASCADE, related_name="items")
+    movie_id = models.CharField(max_length=20, db_index=True)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["movie_list", "movie_id"], name="unique_movie_in_list")
+        ]
+        ordering = ["added_at"]
+
+    def __str__(self):
+        return f"MovieListItem(list={self.movie_list_id}, movie={self.movie_id})"

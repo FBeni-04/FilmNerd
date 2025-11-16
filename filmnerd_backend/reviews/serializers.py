@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Review, User, Favourite
+from .models import Review, User, Favourite, MovieList, MovieListItem
 
 # reviews/serializers.py
 from rest_framework import serializers
@@ -67,5 +67,29 @@ class FavouriteSerializer(serializers.ModelSerializer):
         if not v:
             raise serializers.ValidationError("movie_id required")
         return v
+    
+#for MovieList and MovieListItem
 
 
+class MovieListItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MovieListItem
+        fields = ['movie_id', 'added_at']
+
+class MovieListSerializer(serializers.ModelSerializer):
+    items = MovieListItemSerializer(many=True, read_only=True)
+    user = serializers.ReadOnlyField(source='user.username')
+
+    class Meta:
+        model = MovieList
+        fields = ['id', 'user', 'name', 'created_at', 'items']
+
+class MovieListCreateUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MovieList
+        fields = ['name']
+
+class MovieListItemCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MovieListItem
+        fields = ['movie_id']
