@@ -51,7 +51,7 @@ function ReviewsBoxAuthed({ movieId, user, access, onRequireLogin }) {
 
   async function save() {
     if (!user || !access) {
-      setError("Be kell jelentkezni az értékeléshez.");
+      setError("You must login to rate.");
       onRequireLogin?.();
       return;
     }
@@ -77,7 +77,7 @@ function ReviewsBoxAuthed({ movieId, user, access, onRequireLogin }) {
       });
 
       if (res.status === 401) {
-        setError("Be kell jelentkezni az értékeléshez.");
+        setError("You must login to rate.");
         onRequireLogin?.();
         return;
       }
@@ -178,12 +178,12 @@ export default function ReviewsBox({ movieId, onRequireLogin, ...props }) {
   if (!user) {
     return (
       <div className="rounded-lg border border-white/10 p-4">
-        <p className="text-sm text-neutral-300">Írj értékelést a bejelentkezés után.</p>
+        <p className="text-sm text-neutral-300">Write a review after login</p>
         <button
           className="mt-2 rounded-md border border-white/15 px-3 py-1.5 text-sm"
           onClick={onRequireLogin}
         >
-          Belépés / Regisztráció
+          Login / Registration
         </button>
       </div>
     );

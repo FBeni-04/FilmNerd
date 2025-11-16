@@ -3,6 +3,7 @@
   import AuthModal from "./components/AuthModal";
   import { useAuthOptional } from "./components/AuthContext";
   import { API_BASE } from "./lib/api";
+  import { Link } from "react-router-dom";
   import Navbar from "./components/Navbar";
 
   const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -48,6 +49,8 @@
       return 0;
     })[0] || null;
   }
+
+
 
   // --- 1–10 skálán emoji ---
   function ratingToEmoji(num) {
@@ -212,6 +215,20 @@
       { key: "buy",      label: "Buy" },
     ];
 
+    const directors = useMemo(() => {
+      const crew = data?.credits?.crew || [];
+      const dirs = crew.filter(c => c.job === "Director");
+      const uniq = [];
+      const seen = new Set();
+      for (const d of dirs) {
+        if (!seen.has(d.id)) {
+          seen.add(d.id);
+          uniq.push(d);
+        }
+      }
+      return uniq;
+    }, [data]);
+
     return (
 
       <div className="min-h-dvh bg-neutral-950 text-neutral-200">
@@ -251,18 +268,22 @@
 
                 {/* INFO */}
                 <div className="flex-1">
-                  <div className="flex items-start justify-between gap-3">
-                    <h1 className="text-3xl font-extrabold tracking-tight text-white">
-                      {data.title} <span className="text-neutral-400">{year && `(${year})`}</span>
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white">
+                      {data.title}{" "}
+                      <span className="text-neutral-400">
+                        {year && `(${year})`}
+                      </span>
                     </h1>
 
                     {/* Kedvenc gomb */}
                     <button
                       onClick={toggleFavourite}
                       disabled={favLoading}
-                      className={`mt-1 inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition
-                        ${isFav ? "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
-                                : "border-white/15 bg-white/5 text-neutral-200 hover:bg-white/10"}`}
+                      className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition
+                        ${isFav
+                          ? "border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+                          : "border-white/15 bg-white/5 text-neutral-200 hover:bg-white/10"}`}
                       title={isFav ? "Delete Favourite" : "Add Favourite"}
                     >
                       <svg
@@ -273,15 +294,11 @@
                         fill={isFav ? "currentColor" : "none"}
                         strokeWidth="2"
                       >
-                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z"/>
+                        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 1 0-7.78 7.78L12 21.23l8.84-8.84a5.5 5.5 0 0 0 0-7.78z" />
                       </svg>
                       {isFav ? "Favourite" : "Add Favourite"}
                     </button>
                   </div>
-
-                  {data.tagline && (
-                    <p className="mt-1 text-neutral-400 italic">{data.tagline}</p>
-                  )}
 
                   <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-neutral-300">
                     {runtime && <span>{runtime}</span>}
@@ -312,7 +329,7 @@
                     <p className="mt-4 max-w-3xl text-neutral-200/90">{data.overview}</p>
                   )}
 
-                  {/* SZEREPLŐK */}
+                {/* SZEREPLŐK */}
                   <div className="mt-6">
                     <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-neutral-400">
                       Cast
@@ -321,7 +338,11 @@
                       {(data.credits?.cast || []).slice(0, 5).map((p) => {
                         const photo = p.profile_path ? TMDB_IMG.w185(p.profile_path) : null;
                         return (
-                          <div key={p.cast_id || p.credit_id} className="w-32 shrink-0">
+                          <Link
+                            key={p.cast_id || p.credit_id || p.id}
+                            to={`/actor/${p.id}`}
+                            className="w-32 shrink-0 hover:-translate-y-1 hover:shadow-lg transition"
+                          >
                             <div className="aspect-[2/3] overflow-hidden rounded-lg border border-white/10 bg-neutral-900">
                               {photo ? (
                                 <img src={photo} className="h-full w-full object-cover" />
@@ -337,12 +358,33 @@
                             <div className="line-clamp-2 text-[11px] text-neutral-400">
                               {p.character}
                             </div>
-                          </div>
+                          </Link>
                         );
                       })}
                     </div>
                   </div>
+
                 </div>
+                  {/* Rendező(k) */}
+                  {directors.length > 0 && (
+                    <div className="mt-1 text-sm text-neutral-200">
+                      <span className="font-semibold text-neutral-100">
+                        Director{directors.length > 1 ? "s" : ""}:
+                      </span>{" "}
+                      {directors.map((d, idx) => (
+                        <span key={d.id}>
+                          {idx > 0 && ", "}
+                          <Link
+                            to={`/director/${d.id}`}
+                            className="hover:underline hover:text-blue-300"
+                          >
+                          {d.name}
+                          </Link>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
               </div>
 
               {/* TRAILER */}

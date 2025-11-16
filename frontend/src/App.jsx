@@ -1,9 +1,11 @@
-
 import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
 import FilmNerdHome from "./FilmNerdHome.jsx";
 import MovieDetail, { parseMovieSlug } from "./MovieDetail.jsx";
 import MovieLists from "./MovieLists";
 import MovieListDetail from "./MovieListDetail";
+import MovieDetail from "./MovieDetail.jsx"; 
+import DirectorDetail from "./DirectorDetail.jsx";
+import ActorDetail from "./ActorDetail.jsx";
 
 function MovieRoute() {
   const { slug } = useParams();
@@ -23,6 +25,8 @@ export default function App() {
         <Route path="/movie/:slug" element={<MovieRoute />} />
         <Route path="/lists" element={<MovieLists />} />
         <Route path="/list/:listId" element={<MovieListDetailWrapper />} />
+        <Route path="/director/:id" element={<DirectorDetail />} />
+        <Route path="/actor/:id" element={<ActorDetail />} />
       </Routes>
     </BrowserRouter>
   );

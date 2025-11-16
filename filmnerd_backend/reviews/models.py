@@ -22,7 +22,7 @@ class Review(models.Model):
         default=0,
         validators=[MinValueValidator(1), MaxValueValidator(5)]
     )
-    text = models.TextField(blank=True)
+    text = models.TextField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
