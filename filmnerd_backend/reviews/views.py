@@ -14,7 +14,8 @@ from django.shortcuts import get_object_or_404
 
 from .models import Review, Favourite, MovieList, MovieListItem
 from .serializers import (ReviewSerializer, RegisterSerializer, LoginSerializer, MeSerializer, 
-                          FavouriteSerializer, MovieListCreateUpdateSerializer, MovieListItemCreateSerializer, MovieListSerializer)
+                          FavouriteSerializer, MovieListCreateUpdateSerializer, MovieListItemCreateSerializer, MovieListSerializer,
+                          FollowSerializer, FollowCreateSerializer, UserPublicSerializer)
 from .permissions import IsOwnerOrReadOnly
 
 User = get_user_model()
@@ -231,3 +232,72 @@ class MovieListItemDestroyView(generics.DestroyAPIView):
             raise permissions.PermissionDenied("You do not own this list.")
         item = get_object_or_404(MovieListItem, movie_list=movie_list, movie_id=movie_id)
         return item
+
+
+
+# --- Social: Follow / Followers / Following / Friends ---
+class FollowCreateView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        """
+        Follow another user. Accepts either {"to_user": <id>} or {"to_user_id": <id>} or {"username": "name"}
+        Returns created Follow or 200 if already exists.
+        """
+        payload = request.data or {}
+        to_user = None
+        to_user_id = payload.get("to_user") or payload.get("to_user_id")
+        username = payload.get("username")
+        if to_user_id:
+            to_user = get_object_or_404(User, pk=to_user_id)
+        elif username:
+            to_user = get_object_or_404(User, username=username)
+        else:
+            return Response({"detail": "Provide to_user_id or username"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if to_user == request.user:
+            return Response({"detail": "You cannot follow yourself."}, status=status.HTTP_400_BAD_REQUEST)
+
+        follow, created = Follow.objects.get_or_create(from_user=request.user, to_user=to_user)
+        ser = FollowSerializer(follow)
+        return Response({"created": created, "follow": ser.data}, status=status.HTTP_200_OK)
+
+
+class UnfollowView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def delete(self, request, user_id: int):
+        Follow.objects.filter(from_user=request.user, to_user_id=user_id).delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class FollowersListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        users = User.objects.filter(following__to_user=request.user).distinct()
+        return Response(UserPublicSerializer(users, many=True).data)
+
+
+class FollowingListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        users = User.objects.filter(followers__from_user=request.user).distinct()
+        return Response(UserPublicSerializer(users, many=True).data)
+
+
+class FriendsListView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # mutual follows: user A follows B and B follows A
+        following_ids = set(
+            Follow.objects.filter(from_user=request.user).values_list("to_user_id", flat=True)
+        )
+        follower_ids = set(
+            Follow.objects.filter(to_user=request.user).values_list("from_user_id", flat=True)
+        )
+        mutual_ids = list(following_ids.intersection(follower_ids))
+        users = User.objects.filter(id__in=mutual_ids)
+        return Response(UserPublicSerializer(users, many=True).data)
