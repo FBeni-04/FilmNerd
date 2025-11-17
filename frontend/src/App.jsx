@@ -6,6 +6,7 @@ import MovieListDetail from "./MovieListDetail";
 import DirectorDetail from "./DirectorDetail.jsx";
 import ActorDetail from "./ActorDetail.jsx";
 import ProfilePage from "./ProfilePage.jsx";
+import PublicProfilePage from "./PublicProfilePage.jsx";
 
 function MovieRoute() {
   const { slug } = useParams();
@@ -28,6 +29,7 @@ export default function App() {
         <Route path="/director/:id" element={<DirectorDetail />} />
         <Route path="/actor/:id" element={<ActorDetail />} />
         <Route path="/profile" element={<ProfilePage/>}></Route>
+        <Route path="/users/:username" element={<PublicProfilePage />} />
       </Routes>
     </BrowserRouter>
   );

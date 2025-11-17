@@ -11,6 +11,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
+from rest_framework.exceptions import NotFound
 
 from .models import Review, Favourite, MovieList, MovieListItem, Follow
 from .serializers import (ReviewSerializer, RegisterSerializer, LoginSerializer, MeSerializer, 
@@ -301,3 +302,73 @@ class FriendsListView(APIView):
         mutual_ids = list(following_ids.intersection(follower_ids))
         users = User.objects.filter(id__in=mutual_ids)
         return Response(UserPublicSerializer(users, many=True).data)
+    
+
+class UserPublicProfileView(generics.RetrieveAPIView):
+    """
+    GET /api/users/<username>/
+    Csak a publikus adatokat adja vissza (username, name, bio stb.).
+    """
+    queryset = User.objects.all()
+    serializer_class = UserPublicSerializer
+    lookup_field = "username"
+    permission_classes = [permissions.AllowAny]
+
+
+class UsernameMixin:
+    """
+    Segéd mixin: URL-ből kiveszi a username-et,
+    és leszűri rá a querysetet.
+    """
+    def get_user(self):
+        username = self.kwargs.get("username")
+        try:
+            return User.objects.get(username=username)
+        except User.DoesNotExist:
+            raise NotFound("User not found")
+
+    def get_queryset(self):
+        user = self.get_user()
+        return super().get_queryset().filter(user=user)
+
+
+class UserListsView(UsernameMixin, generics.ListAPIView):
+    """
+    GET /api/users/<username>/lists/
+    Az adott user MovieListjei.
+    """
+    serializer_class = MovieListSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        base_qs = MovieList.objects.all()
+        user = self.get_user()
+        return base_qs.filter(user=user)
+
+
+class UserFavouritesView(UsernameMixin, generics.ListAPIView):
+    """
+    GET /api/users/<username>/favourites/
+    Az adott user kedvenc filmjei.
+    """
+    serializer_class = FavouriteSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        base_qs = Favourite.objects.all()
+        user = self.get_user()
+        return base_qs.filter(user=user)
+
+
+class UserReviewsView(UsernameMixin, generics.ListAPIView):
+    """
+    GET /api/users/<username>/reviews/
+    Az adott user review-i.
+    """
+    serializer_class = ReviewSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        base_qs = Review.objects.all()
+        user = self.get_user()
+        return base_qs.filter(user=user)

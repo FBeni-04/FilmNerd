@@ -426,7 +426,7 @@ function Skeleton({ className = "" }) {
  *  MOVIE CARD (with favourite heart)
  * ==========================
  */
-function MovieCard({ movie }) {
+export function MovieCard({ movie }) {
   const poster = movie?.poster_path ? TMDB_IMG.w342(movie.poster_path) : null;
   const title = movie?.title || movie?.name || "Unknown title";
   const year = getYear(movie?.release_date);

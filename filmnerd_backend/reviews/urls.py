@@ -15,7 +15,11 @@ from .views import (
     UnfollowView,
     FollowersListView,
     FollowingListView,
-    FriendsListView
+    FriendsListView,
+    UserPublicProfileView,
+    UserListsView,
+    UserFavouritesView,
+    UserReviewsView,
 )
 
 router = DefaultRouter()
@@ -68,4 +72,11 @@ urlpatterns = [
     path("social/followers/", FollowersListView.as_view(), name="followers-list"),
     path("social/following/", FollowingListView.as_view(), name="following-list"),
     path("social/friends/", FriendsListView.as_view(), name="friends-list"),
+
+
+    # --- Public user profile endpoints (NINCS 'api/' előtte!) ---
+    path("users/<str:username>/", UserPublicProfileView.as_view(), name="user-public-profile"),
+    path("users/<str:username>/lists/", UserListsView.as_view(), name="user-lists"),
+    path("users/<str:username>/favourites/", UserFavouritesView.as_view(), name="user-favourites"),
+    path("users/<str:username>/reviews/", UserReviewsView.as_view(), name="user-reviews"),
 ]

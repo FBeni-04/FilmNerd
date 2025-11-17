@@ -56,6 +56,14 @@ class ReviewSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "user_id", "created_at", "updated_at"]
 
 
+class UserPublicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username", "name", "email"]  # vagy amit publikusan szeretnél
+        extra_kwargs = {
+            "email": {"read_only": True},
+        }
+
 class FavouriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favourite
@@ -93,11 +101,6 @@ class MovieListItemCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = MovieListItem
         fields = ['movie_id']
-
-class UserPublicSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ["id", "username", "name"]
 
 
 class FollowSerializer(serializers.ModelSerializer):

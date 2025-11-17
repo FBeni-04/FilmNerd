@@ -1,6 +1,6 @@
-// src/ProfilePage.jsx
-import { useEffect, useState, useMemo } from "react";
-import { Link } from "react-router-dom";
+// src/PublicProfilePage.jsx
+import { useEffect, useMemo, useState } from "react";
+import { useParams, Link } from "react-router-dom";
 import {
   API_BASE,
   followUser,
@@ -41,19 +41,20 @@ function ratingToEmoji(r) {
   return "😡";
 }
 
-export default function ProfilePage() {
-  const [me, setMe] = useState(null);
+export default function PublicProfilePage() {
+  const { username } = useParams();
+
+  const [user, setUser] = useState(null);
   const [lists, setLists] = useState([]);
   const [favourites, setFavourites] = useState([]);
   const [reviews, setReviews] = useState([]);
 
+  const [favMovies, setFavMovies] = useState([]);
+  const [reviewMovies, setReviewMovies] = useState([]);
+
   const [followers, setFollowers] = useState([]);
   const [following, setFollowing] = useState([]);
   const [friends, setFriends] = useState([]);
-  const [followUsername, setFollowUsername] = useState("");
-
-  const [favMovies, setFavMovies] = useState([]);
-  const [reviewMovies, setReviewMovies] = useState([]);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -66,8 +67,8 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
-    if (!token) {
-      setError("You need to sign in to view your profile.");
+    if (!username) {
+      setError("No username provided.");
       setLoading(false);
       return;
     }
@@ -77,16 +78,17 @@ export default function ProfilePage() {
         setLoading(true);
         setError("");
 
-        const meRes = await fetch(`${API_BASE}/auth/me/`, {
+        const userRes = await fetch(`${API_BASE}/users/${username}/`, {
           headers: authHeaders,
         });
-        if (!meRes.ok) {
-          throw new Error("Failed to load your profile.");
+        if (!userRes.ok) {
+          if (userRes.status === 404) throw new Error("User not found.");
+          throw new Error("Failed to load user profile.");
         }
-        const meData = await meRes.json();
-        setMe(meData);
+        const userData = await userRes.json();
+        setUser(userData);
 
-        const listsRes = await fetch(`${API_BASE}/lists/`, {
+        const listsRes = await fetch(`${API_BASE}/users/${username}/lists/`, {
           headers: authHeaders,
         });
         const listsData = await listsRes.json();
@@ -96,32 +98,23 @@ export default function ProfilePage() {
         if (!Array.isArray(listList)) listList = [];
         setLists(listList);
 
-        const favRes = await fetch(`${API_BASE}/favourites/`, {
-          headers: authHeaders,
-        });
+        const favRes = await fetch(
+          `${API_BASE}/users/${username}/favourites/`,
+          { headers: authHeaders }
+        );
         const favData = await favRes.json();
         let favList = Array.isArray(favData) ? favData : favData.results;
         if (!Array.isArray(favList)) favList = [];
         setFavourites(favList);
 
-        const revRes = await fetch(`${API_BASE}/reviews/`, {
-          headers: authHeaders,
-        });
+        const revRes = await fetch(
+          `${API_BASE}/users/${username}/reviews/`,
+          { headers: authHeaders }
+        );
         const revData = await revRes.json();
         let reviewList = Array.isArray(revData) ? revData : revData.results;
         if (!Array.isArray(reviewList)) reviewList = [];
         setReviews(reviewList);
-
-        try {
-          const [followersData, followingData, friendsData] = await Promise.all(
-            [getFollowers({ token }), getFollowing({ token }), getFriends({ token })]
-          );
-          setFollowers(Array.isArray(followersData) ? followersData : []);
-          setFollowing(Array.isArray(followingData) ? followingData : []);
-          setFriends(Array.isArray(friendsData) ? friendsData : []);
-        } catch (e) {
-          console.warn("Social endpoints unavailable:", e?.message || e);
-        }
       } catch (err) {
         console.error(err);
         setError(err.message || "Unknown error occurred.");
@@ -131,18 +124,39 @@ export default function ProfilePage() {
     }
 
     loadData();
+  }, [username]);
+
+  useEffect(() => {
+    if (!token) return;
+    async function loadSocial() {
+      try {
+        const [followersData, followingData, friendsData] = await Promise.all([
+          getFollowers({ token }),
+          getFollowing({ token }),
+          getFriends({ token }),
+        ]);
+        setFollowers(Array.isArray(followersData) ? followersData : []);
+        setFollowing(Array.isArray(followingData) ? followingData : []);
+        setFriends(Array.isArray(friendsData) ? friendsData : []);
+      } catch (e) {
+        console.warn(
+          "Social endpoints unavailable on public profile:",
+          e?.message || e
+        );
+      }
+    }
+    loadSocial();
   }, [token]);
 
   const myRecentReviews = useMemo(() => {
-    if (!me) return [];
     return reviews
-      .filter((r) => r.user_id === me.id)
+      .slice()
       .sort(
         (a, b) =>
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
       )
       .slice(0, 5);
-  }, [reviews, me]);
+  }, [reviews]);
 
   useEffect(() => {
     async function loadFavMovies() {
@@ -191,15 +205,23 @@ export default function ProfilePage() {
     loadReviewMovies();
   }, [myRecentReviews]);
 
-  const displayName = me?.name || me?.username || "Unknown user";
+  const displayName =
+    user?.name || user?.username || (username ? `@${username}` : "User");
   const initial = displayName[0]?.toUpperCase() || "?";
 
-  async function handleFollowSubmit(e) {
-    e.preventDefault();
-    if (!followUsername.trim()) return;
+  const isFollowing =
+    !!user && following.some((u) => u.username === user.username);
+  const isFriend =
+    !!user && friends.some((u) => u.username === user.username);
+
+  async function handleToggleFollow() {
+    if (!token || !user) return;
     try {
-      await followUser({ token, username: followUsername.trim() });
-      setFollowUsername("");
+      if (isFollowing) {
+        await unfollowUser({ token, userId: user.id });
+      } else {
+        await followUser({ token, username: user.username });
+      }
       const [followersData, followingData, friendsData] = await Promise.all([
         getFollowers({ token }),
         getFollowing({ token }),
@@ -209,18 +231,7 @@ export default function ProfilePage() {
       setFollowing(Array.isArray(followingData) ? followingData : []);
       setFriends(Array.isArray(friendsData) ? friendsData : []);
     } catch (err) {
-      alert(err.message || "Failed to follow user");
-    }
-  }
-
-  async function handleUnfollow(id) {
-    try {
-      await unfollowUser({ token, userId: id });
-      setFollowing((prev) => prev.filter((u) => u.id !== id));
-      const friendsData = await getFriends({ token });
-      setFriends(Array.isArray(friendsData) ? friendsData : []);
-    } catch (err) {
-      alert(err.message || "Failed to unfollow user");
+      alert(err.message || "Failed to update follow status");
     }
   }
 
@@ -228,6 +239,7 @@ export default function ProfilePage() {
     <AuthProvider>
       <div className="min-h-dvh bg-neutral-950 text-neutral-200">
         <Navbar />
+
         <div className="mx-auto max-w-7xl px-4 py-8">
           {loading && (
             <div className="text-neutral-100 p-8 text-center">Loading...</div>
@@ -239,16 +251,7 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {!loading && !error && !token && (
-            <div className="text-neutral-100 p-8 text-center">
-              <h1 className="text-2xl font-semibold mb-4">Profile</h1>
-              <p className="text-neutral-300">
-                You need to sign in to view your profile.
-              </p>
-            </div>
-          )}
-
-          {!loading && !error && token && me && (
+          {!loading && !error && (
             <>
               <header className="mb-8 flex items-center justify-between">
                 <div className="flex items-center gap-4">
@@ -259,7 +262,11 @@ export default function ProfilePage() {
                     <h1 className="text-2xl font-extrabold tracking-tight text-neutral-100">
                       {displayName}
                     </h1>
-                    <p className="text-sm text-neutral-400">@{me.username}</p>
+                    {user?.username && (
+                      <p className="text-sm text-neutral-400">
+                        @{user.username}
+                      </p>
+                    )}
                   </div>
                 </div>
               </header>
@@ -269,109 +276,59 @@ export default function ProfilePage() {
                   <h2 className="text-lg font-bold tracking-tight text-neutral-100 mb-3">
                     Social
                   </h2>
-
-                  <form
-                    onSubmit={handleFollowSubmit}
-                    className="flex flex-col sm:flex-row gap-2 mb-4"
-                  >
-                    <input
-                      type="text"
-                      placeholder="Follow by username"
-                      value={followUsername}
-                      onChange={(e) => setFollowUsername(e.target.value)}
-                      className="flex-1 px-3 py-2 rounded-md bg-neutral-900 border border-white/10 text-sm"
-                    />
-                    <button
-                      type="submit"
-                      className="px-3 py-2 rounded-md bg-emerald-600 text-white text-sm hover:bg-emerald-500"
-                    >
-                      Follow
-                    </button>
-                  </form>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="bg-neutral-900 p-4 rounded-xl border border-white/10">
-                      <div className="text-xs text-neutral-400 mb-2">
-                        Followers ({followers.length})
-                      </div>
-                      <ul className="space-y-1 text-sm">
-                        {followers.map((u) => (
-                          <li
-                            key={u.id}
-                            className="flex justify-between items-center"
-                          >
-                            <Link
-                              to={`/users/${u.username}`}
-                              className="hover:text-emerald-400"
-                            >
-                              @{u.username}
-                              {u.name ? ` (${u.name})` : ""}
-                            </Link>
-                          </li>
-                        ))}
-                        {followers.length === 0 && (
-                          <li className="text-neutral-500">
-                            No followers yet.
-                          </li>
+                  {!token ? (
+                    <p className="text-neutral-400 text-sm">
+                      Sign in to follow this user.
+                    </p>
+                  ) : (
+                    <>
+                      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+                        <button
+                          type="button"
+                          onClick={handleToggleFollow}
+                          className={`px-4 py-2 rounded-md text-sm font-medium ${
+                            isFollowing
+                              ? "bg-neutral-800 border border-white/20 text-neutral-100 hover:bg-neutral-700"
+                              : "bg-emerald-600 text-white hover:bg-emerald-500"
+                          }`}
+                        >
+                          {isFollowing ? "Unfollow" : "Follow"}
+                        </button>
+                        {isFriend && (
+                          <span className="text-xs text-emerald-400">
+                            You are friends (mutual follow).
+                          </span>
                         )}
-                      </ul>
-                    </div>
-
-                    <div className="bg-neutral-900 p-4 rounded-xl border border-white/10">
-                      <div className="text-xs text-neutral-400 mb-2">
-                        Following ({following.length})
                       </div>
-                      <ul className="space-y-1 text-sm">
-                        {following.map((u) => (
-                          <li
-                            key={u.id}
-                            className="flex justify-between items-center gap-2"
-                          >
-                            <Link
-                              to={`/users/${u.username}`}
-                              className="hover:text-emerald-400"
-                            >
-                              @{u.username}
-                              {u.name ? ` (${u.name})` : ""}
-                            </Link>
-                            <button
-                              onClick={() => handleUnfollow(u.id)}
-                              className="px-2 py-1 rounded-md border border-white/10 text-xs hover:bg-neutral-800"
-                            >
-                              Unfollow
-                            </button>
-                          </li>
-                        ))}
-                        {following.length === 0 && (
-                          <li className="text-neutral-500">
-                            Not following anyone yet.
-                          </li>
-                        )}
-                      </ul>
-                    </div>
 
-                    <div className="bg-neutral-900 p-4 rounded-xl border border-white/10">
-                      <div className="text-xs text-neutral-400 mb-2">
-                        Friends (mutual) ({friends.length})
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <div className="bg-neutral-900 p-4 rounded-xl border border-white/10 text-center">
+                          <div className="text-xs text-neutral-400 mb-1">
+                            Followers
+                          </div>
+                          <div className="text-xl font-semibold">
+                            {followers.length}
+                          </div>
+                        </div>
+                        <div className="bg-neutral-900 p-4 rounded-xl border border-white/10 text-center">
+                          <div className="text-xs text-neutral-400 mb-1">
+                            Following
+                          </div>
+                          <div className="text-xl font-semibold">
+                            {following.length}
+                          </div>
+                        </div>
+                        <div className="bg-neutral-900 p-4 rounded-xl border border-white/10 text-center">
+                          <div className="text-xs text-neutral-400 mb-1">
+                            Friends (mutual)
+                          </div>
+                          <div className="text-xl font-semibold">
+                            {friends.length}
+                          </div>
+                        </div>
                       </div>
-                      <ul className="space-y-1 text-sm">
-                        {friends.map((u) => (
-                          <li key={u.id}>
-                            <Link
-                              to={`/users/${u.username}`}
-                              className="hover:text-emerald-400"
-                            >
-                              @{u.username}
-                              {u.name ? ` (${u.name})` : ""}
-                            </Link>
-                          </li>
-                        ))}
-                        {friends.length === 0 && (
-                          <li className="text-neutral-500">No friends yet.</li>
-                        )}
-                      </ul>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </section>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -395,20 +352,19 @@ export default function ProfilePage() {
 
                 <section>
                   <h2 className="text-lg font-bold tracking-tight text-neutral-100 mb-3">
-                    Your lists
+                    Lists
                   </h2>
 
                   {lists.length === 0 ? (
                     <p className="text-neutral-400 text-sm">
-                      You don't have any lists yet.
+                      This user doesn't have any lists yet.
                     </p>
                   ) : (
                     <div className="space-y-3">
                       {lists.map((list) => (
-                        <Link
+                        <div
                           key={list.id}
-                          to={`/list/${list.id}`}
-                          className="block p-4 bg-neutral-900 rounded-lg border border-white/10 hover:border-emerald-400/70 hover:bg-neutral-900/80 transition-colors"
+                          className="block p-4 bg-neutral-900 rounded-lg border border-white/10"
                         >
                           <div className="flex justify-between">
                             <div className="font-semibold text-neutral-100">
@@ -418,7 +374,7 @@ export default function ProfilePage() {
                               {list.items?.length || 0} movies
                             </div>
                           </div>
-                        </Link>
+                        </div>
                       ))}
                     </div>
                   )}
@@ -426,12 +382,12 @@ export default function ProfilePage() {
 
                 <section>
                   <h2 className="text-lg font-bold tracking-tight text-neutral-100 mb-3">
-                    Your latest reviews
+                    Latest reviews
                   </h2>
 
                   {reviewMovies.length === 0 ? (
                     <p className="text-neutral-400 text-sm">
-                      You haven't written any reviews yet.
+                      This user hasn't written any reviews yet.
                     </p>
                   ) : (
                     <div className="space-y-3">
@@ -473,7 +429,7 @@ export default function ProfilePage() {
                             </Link>
 
                             <div className="flex-1">
-                              <div className="flex justify-between items-start mb-1 gap-2">
+                              <div className="flex justify_between items-start mb-1 gap-2">
                                 <Link
                                   to={`/movie/${encodeURIComponent(sourceId)}`}
                                   className="text-sm text-neutral-100 font-semibold line-clamp-2 hover:text-white"
@@ -510,12 +466,12 @@ export default function ProfilePage() {
 
                 <section>
                   <h2 className="text-lg font-bold tracking-tight text-neutral-100 mb-3">
-                    Your favourite movies
+                    Favourite movies
                   </h2>
 
                   {favourites.length === 0 ? (
                     <p className="text-neutral-400 text-sm">
-                      You don't have any favourites yet.
+                      This user doesn't have any favourites yet.
                     </p>
                   ) : !favMovies.length ? (
                     <p className="text-neutral-400 text-sm">
