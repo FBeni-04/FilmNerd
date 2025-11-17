@@ -93,3 +93,31 @@ class MovieListItemCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = MovieListItem
         fields = ['movie_id']
+
+class UserPublicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "username", "name"]
+
+
+class FollowSerializer(serializers.ModelSerializer):
+    from_user = UserPublicSerializer(read_only=True)
+    to_user = UserPublicSerializer(read_only=True)
+
+    class Meta:
+        model = Follow
+        fields = ["id", "from_user", "to_user", "created_at"]
+
+
+class FollowCreateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Follow
+        fields = ["to_user"]
+        extra_kwargs = {"to_user": {"write_only": True}}
+
+    def validate(self, attrs):
+        request = self.context.get("request")
+        to_user = attrs.get("to_user")
+        if request and request.user == to_user:
+            raise serializers.ValidationError("You cannot follow yourself.")
+        return attrs
