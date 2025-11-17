@@ -12,7 +12,7 @@ from django.contrib.auth import get_user_model
 from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 
-from .models import Review, Favourite, MovieList, MovieListItem
+from .models import Review, Favourite, MovieList, MovieListItem, Follow
 from .serializers import (ReviewSerializer, RegisterSerializer, LoginSerializer, MeSerializer, 
                           FavouriteSerializer, MovieListCreateUpdateSerializer, MovieListItemCreateSerializer, MovieListSerializer,
                           FollowSerializer, FollowCreateSerializer, UserPublicSerializer)

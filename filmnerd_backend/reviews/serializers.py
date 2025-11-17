@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Review, User, Favourite, MovieList, MovieListItem
+from .models import Review, User, Favourite, MovieList, MovieListItem, Follow
 
 # reviews/serializers.py
 from rest_framework import serializers
