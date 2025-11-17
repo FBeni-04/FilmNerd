@@ -80,3 +80,25 @@ class MovieListItem(models.Model):
 
     def __str__(self):
         return f"MovieListItem(list={self.movie_list_id}, movie={self.movie_id})"
+
+class Follow(models.Model):
+    from_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="following"
+    )
+    to_user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="followers"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["from_user", "to_user"], name="unique_follow")
+        ]
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Follow({self.from_user_id} -> {self.to_user_id})"
