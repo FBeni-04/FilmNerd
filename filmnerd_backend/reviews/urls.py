@@ -10,7 +10,12 @@ from .views import (
     FavouriteViewSet,
     MovieListItemCreateView,
     MovieListItemDestroyView,
-    MovieListViewSet
+    MovieListViewSet,
+    FollowCreateView,
+    UnfollowView,
+    FollowersListView,
+    FollowingListView,
+    FriendsListView
 )
 
 router = DefaultRouter()
@@ -56,4 +61,11 @@ urlpatterns = [
          MovieListItemDestroyView.as_view(), 
          name='listitem-destroy'),
     path('',include(router.urls)),
+
+    # --- Social (Follow/Friends) ---
+    path("social/follow/", FollowCreateView.as_view(), name="follow-create"),
+    path("social/unfollow/<int:user_id>/", UnfollowView.as_view(), name="unfollow"),
+    path("social/followers/", FollowersListView.as_view(), name="followers-list"),
+    path("social/following/", FollowingListView.as_view(), name="following-list"),
+    path("social/friends/", FriendsListView.as_view(), name="friends-list"),
 ]
