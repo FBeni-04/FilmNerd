@@ -1,7 +1,7 @@
 // src/ProfilePage.jsx
 import { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
-import { API_BASE } from "./lib/api";
+import { API_BASE, followUser, unfollowUser, getFollowers, getFollowing, getFriends } from "./lib/api";
 import AuthProvider from "./components/AuthContext";
 import Navbar from "./components/Navbar";
 
@@ -48,8 +48,13 @@ export default function ProfilePage() {
   const [lists, setLists] = useState([]);
   const [favourites, setFavourites] = useState([]);
   const [reviews, setReviews] = useState([]);
+    // Social
+    const [followers, setFollowers] = useState([]);
+    const [following, setFollowing] = useState([]);
+    const [friends, setFriends] = useState([]);
+    const [followUsername, setFollowUsername] = useState("");
 
-  // Favourites with TMDB details (poster, title, year, slug)
+    // Favourites with TMDB details (poster, title, year, slug)
   const [favMovies, setFavMovies] = useState([]);
   // Own reviews with TMDB title/poster/slug
   const [reviewMovies, setReviewMovies] = useState([]);
@@ -119,6 +124,20 @@ export default function ProfilePage() {
           : revData.results;
         if (!Array.isArray(reviewList)) reviewList = [];
         setReviews(reviewList);
+
+          // --- SOCIAL ---
+          try {
+              const [followersData, followingData, friendsData] = await Promise.all([
+                  getFollowers({ token }),
+                  getFollowing({ token }),
+                  getFriends({ token }),
+              ]);
+              setFollowers(Array.isArray(followersData) ? followersData : []);
+              setFollowing(Array.isArray(followingData) ? followingData : []);
+              setFriends(Array.isArray(friendsData) ? friendsData : []);
+          } catch (e) {
+              console.warn("Social endpoints unavailable:", e?.message || e);
+          }
       } catch (err) {
         console.error(err);
         setError(err.message || "Unknown error occurred.");
@@ -235,7 +254,40 @@ export default function ProfilePage() {
   const displayName = me?.name || me?.username || "Unknown user";
   const initial = displayName[0]?.toUpperCase() || "?";
 
-  // ===============================
+  async function handleFollowSubmit(e) {
+      e.preventDefault();
+      if (!followUsername.trim()) return;
+      try {
+          await followUser({ token, username: followUsername.trim() });
+          setFollowUsername("");
+          // refresh lists
+          const [followersData, followingData, friendsData] = await Promise.all([
+              getFollowers({ token }),
+              getFollowing({ token }),
+              getFriends({ token }),
+          ]);
+          setFollowers(Array.isArray(followersData) ? followersData : []);
+          setFollowing(Array.isArray(followingData) ? followingData : []);
+          setFriends(Array.isArray(friendsData) ? friendsData : []);
+      } catch (err) {
+          alert(err.message || "Failed to follow user");
+      }
+  }
+
+  async function handleUnfollow(id) {
+      try {
+          await unfollowUser({ token, userId: id });
+          // optimistically update
+          setFollowing((prev) => prev.filter((u) => u.id !== id));
+          // recompute friends after change
+          const friendsData = await getFriends({ token });
+          setFriends(Array.isArray(friendsData) ? friendsData : []);
+      } catch (err) {
+          alert(err.message || "Failed to unfollow user");
+      }
+  }
+
+    // ===============================
   // LAYOUT – same shell as FilmNerdHome
   // ===============================
   return (
@@ -284,6 +336,74 @@ export default function ProfilePage() {
               </header>
 
               <main className="space-y-10">
+                 {/* SOCIAL */}
+                  <section>
+                      <h2 className="text-lg font-bold tracking-tight text-neutral-100 mb-3">Social</h2>
+
+                      <form onSubmit={handleFollowSubmit} className="flex gap-2 mb-4">
+                          <input
+                              type="text"
+                              placeholder="Follow by username"
+                              value={followUsername}
+                              onChange={(e) => setFollowUsername(e.target.value)}
+                              className="flex-1 px-3 py-2 rounded-md bg-neutral-900 border border-white/10 text-sm"
+                          />
+                          <button
+                              type="submit"
+                              className="px-3 py-2 rounded-md bg-emerald-600 text-white text-sm hover:bg-emerald-500"
+                          >
+                              Follow
+                          </button>
+                      </form>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                          <div className="bg-neutral-900 p-4 rounded-xl border border-white/10">
+                              <div className="text-xs text-neutral-400 mb-2">Followers ({followers.length})</div>
+                              <ul className="space-y-1 text-sm">
+                                  {followers.map((u) => (
+                                      <li key={u.id} className="flex justify-between items-center">
+                                          <span>@{u.username}{u.name ? ` (${u.name})` : ""}</span>
+                                      </li>
+                                  ))}
+                                  {followers.length === 0 && (
+                                      <li className="text-neutral-500">No followers yet.</li>
+                                  )}
+                              </ul>
+                          </div>
+
+                          <div className="bg-neutral-900 p-4 rounded-xl border border-white/10">
+                              <div className="text-xs text-neutral-400 mb-2">Following ({following.length})</div>
+                              <ul className="space-y-1 text-sm">
+                                  {following.map((u) => (
+                                      <li key={u.id} className="flex justify-between items-center gap-2">
+                                          <span>@{u.username}{u.name ? ` (${u.name})` : ""}</span>
+                                          <button
+                                              onClick={() => handleUnfollow(u.id)}
+                                              className="px-2 py-1 rounded-md border border-white/10 text-xs hover:bg-neutral-800"
+                                          >
+                                              Unfollow
+                                          </button>
+                                      </li>
+                                  ))}
+                                  {following.length === 0 && (
+                                      <li className="text-neutral-500">Not following anyone yet.</li>
+                                  )}
+                              </ul>
+                          </div>
+
+                          <div className="bg-neutral-900 p-4 rounded-xl border border-white/10">
+                              <div className="text-xs text-neutral-400 mb-2">Friends (mutual) ({friends.length})</div>
+                              <ul className="space-y-1 text-sm">
+                                  {friends.map((u) => (
+                                      <li key={u.id}>@{u.username}{u.name ? ` (${u.name})` : ""}</li>
+                                  ))}
+                                  {friends.length === 0 && (
+                                      <li className="text-neutral-500">No friends yet.</li>
+                                  )}
+                              </ul>
+                          </div>
+                      </div>
+                  </section>
                 {/* STAT CARDS */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="bg-neutral-900 p-4 rounded-xl border border-white/10 text-center">
