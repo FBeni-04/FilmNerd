@@ -50,7 +50,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
 }
-DATABASES = {
+"""DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.mysql",
         "NAME": os.environ.get("DB_NAME", "filmnerd"),
@@ -59,6 +59,13 @@ DATABASES = {
         "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
         "PORT": os.environ.get("DB_PORT", "3307"),
     }
+}"""
+
+DATABASES = {
+      "default": {
+          "ENGINE": "django.db.backends.sqlite3",
+          "NAME": BASE_DIR / "db.sqlite3",
+      }
 }
     
 
