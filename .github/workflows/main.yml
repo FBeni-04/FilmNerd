@@ -55,6 +55,9 @@ jobs:
           cd frontend
           npm ci
 
+      - name: Run migrations
+        run: python manage.py migrate --noinput
+
       - name: Run frontend tests (Vitest)
         run: |
           cd frontend
