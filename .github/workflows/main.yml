@@ -64,7 +64,7 @@ jobs:
       - name: Run frontend tests (Vitest)
         run: |
           cd frontend
-          npm run test:ci
+          npm run test
 
   ##############################################################################
   # FRONTEND BUILD – Vite build
