@@ -50,27 +50,17 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
 }
-
-USE_SQLITE_FOR_TESTS = os.environ.get("USE_SQLITE_FOR_TESTS") == "1"
-
-if USE_SQLITE_FOR_TESTS:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.sqlite3",
-            "NAME": BASE_DIR / "db.sqlite3",
-        }
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": os.environ.get("DB_NAME", "filmnerd"),
+        "USER": os.environ.get("DB_USER", "root"),
+        "PASSWORD": os.environ.get("DB_PASS", ""),
+        "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
+        "PORT": os.environ.get("DB_PORT", "3307"),
     }
-else:
-    DATABASES = {
-        "default": {
-            "ENGINE": "django.db.backends.mysql",
-            "NAME": os.environ.get("DB_NAME", "filmnerd"),
-            "USER": os.environ.get("DB_USER", "root"),
-            "PASSWORD": os.environ.get("DB_PASS", ""),
-            "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
-            "PORT": os.environ.get("DB_PORT", "3307"),
-        }
-    }
+}
+    
 
 STATIC_URL = "/static/"
 ROOT_URLCONF = "filmnerd_backend.urls"
