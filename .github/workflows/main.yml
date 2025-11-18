@@ -30,7 +30,9 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run migrations
-        run: python manage.py migrate --noinput
+        run: | 
+          cd filmnerd_backend
+          python manage.py migrate --noinput
 
       - name: Run Django tests (pytest)
         run: |
