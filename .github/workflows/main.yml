@@ -35,8 +35,7 @@ jobs:
           DJANGO_SETTINGS_MODULE: filmnerd_backend.settings
         run: |
           cd filmnerd_backend
-          python manage.py migrate --noinput
-          pytest --maxfail=1 --disable-warnings --cov=. --cov-report=xml
+          python manage.py pytest
 
   ##############################################################################
   # FRONTEND TESTS – React + Vite + Vitest
