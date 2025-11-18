@@ -60,6 +60,10 @@ jobs:
           cd frontend
           npm ci
 
+      - name: Install vitest
+        run: |
+          cd frontend
+          npm install -D vitest
 
       - name: Run frontend tests (Vitest)
         run: |
