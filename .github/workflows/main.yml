@@ -1,0 +1,117 @@
+name: FilmNerd CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  ##############################################################################
+  # BACKEND TESTS – Django + pytest
+  ##############################################################################
+  backend_tests:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies
+        run: |
+          cd filmnerd_backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run Django tests (pytest)
+        env:
+          # Ha SQLite-ot használsz CI-ben, általában nem kell extra env
+          DJANGO_SETTINGS_MODULE: filmnerd_backend.settings
+        run: |
+          cd filmnerd_backend
+          python manage.py migrate --noinput
+          pytest --maxfail=1 --disable-warnings --cov=. --cov-report=xml
+
+  ##############################################################################
+  # FRONTEND TESTS – React + Vite + Vitest
+  ##############################################################################
+  frontend_tests:
+    runs-on: ubuntu-latest
+    needs: backend_tests   # ha akarod, csak akkor fusson, ha a backend oké
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run frontend tests (Vitest)
+        run: |
+          cd frontend
+          npm run test:ci
+
+  ##############################################################################
+  # FRONTEND BUILD – Vite build
+  ##############################################################################
+  frontend_build:
+    runs-on: ubuntu-latest
+    needs: [ backend_tests, frontend_tests ]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Build frontend
+        run: |
+          cd frontend
+          npm run build
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: filmnerd-frontend-dist
+          path: frontend/dist
+
+  ##############################################################################
+  # DEPLOY – egyelőre csak helyfoglaló, ide jöhet majd az éles/staging deploy
+  ##############################################################################
+  deploy:
+    runs-on: ubuntu-latest
+    needs: frontend_build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+      - name: Download frontend artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: filmnerd-frontend-dist
+          path: dist
+
+      - name: Dummy deploy step
+        run: |
+          echo "Itt tudnánk pl. SSH-val feltolni a dist mappát a szerverre,"
+          echo "vagy Docker image-et buildelni és pusholni egy registry-be."
