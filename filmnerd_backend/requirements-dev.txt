@@ -1,0 +1,13 @@
+pytest
+pytest-django
+pytest-cov
+
+# DRF API testing
+djangorestframework-simplejwt[crypto]
+
+# Mivel a CI-ben SQLite-ot használsz:
+pysqlite3-binary
+
+# Linter + formatter (opcionális, ha szeretnéd)
+black
+flake8
