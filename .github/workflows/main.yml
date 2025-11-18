@@ -30,9 +30,6 @@ jobs:
           pip install -r requirements-dev.txt
 
       - name: Run Django tests (pytest)
-        env:
-          # Ha SQLite-ot használsz CI-ben, általában nem kell extra env
-          DJANGO_SETTINGS_MODULE: filmnerd_backend.settings
         run: |
           cd filmnerd_backend
           python manage.py test
