@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { calcRating } from '/calcRating';
+import { calcRating } from './calcRating';
 
 describe('calcRating', () => {
   it('returns 0 for negative ratings', () => {
