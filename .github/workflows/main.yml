@@ -35,7 +35,7 @@ jobs:
           DJANGO_SETTINGS_MODULE: filmnerd_backend.settings
         run: |
           cd filmnerd_backend
-          python manage.py pytest
+          python manage.py test
 
   ##############################################################################
   # FRONTEND TESTS – React + Vite + Vitest
