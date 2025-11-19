@@ -103,6 +103,7 @@ jobs:
       - name: Build frontend
         run: |
           cd frontend
+          export GITHUB_PAGES=true
           npm run build
 
       - name: Upload build artifact
