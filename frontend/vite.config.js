@@ -4,12 +4,14 @@ import tailwind from '@tailwindcss/vite'
 
 export default ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+
   const isGithubPages = env.GITHUB_PAGES === 'true'
 
   return defineConfig({
     base: isGithubPages ? '/filmnerd/' : '/',
 
     plugins: [react(), tailwind()],
+
     server: {
       proxy: {
         '/api': {
@@ -18,8 +20,12 @@ export default ({ mode }) => {
         },
       },
     },
+
     define: {
       __TMDB_API_KEY__: JSON.stringify(env.VITE_TMDB_API_KEY),
+      __API_BASE__: JSON.stringify(
+        env.VITE_API_BASE || 'http://127.0.0.1:8000/api'
+      ),
     },
   })
 }
