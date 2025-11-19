@@ -20,7 +20,7 @@ function MovieListDetailWrapper() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/filmnerd">
       <Routes>
         <Route path="/" element={<FilmNerdHome />} />
         <Route path="/movie/:slug" element={<MovieRoute />} />
@@ -28,7 +28,7 @@ export default function App() {
         <Route path="/list/:listId" element={<MovieListDetailWrapper />} />
         <Route path="/director/:id" element={<DirectorDetail />} />
         <Route path="/actor/:id" element={<ActorDetail />} />
-        <Route path="/profile" element={<ProfilePage/>}></Route>
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="/users/:username" element={<PublicProfilePage />} />
       </Routes>
     </BrowserRouter>

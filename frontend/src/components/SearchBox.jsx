@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { FaMagnifyingGlass, FaXmark } from "react-icons/fa6";
+import { Link } from "react-router-dom";
 
 /* ——— Lokális helper-ek ——— */
 const TMDB_BASE = "https://api.themoviedb.org/3";
@@ -136,8 +137,8 @@ export default function SearchBox({ onSelect }) {
             <ul className="max-h-72 overflow-auto divide-y divide-white/10">
               {results.map((m) => (
                 <li key={m.id} className="flex items-center gap-3 px-3 py-3 hover:bg-white/5">
-                  <a
-                    href={`/movie/${m.id}`}
+                  <Link
+                    to={`/movie/${m.id}`}
                     className="flex w-full items-center gap-3"
                     onClick={(e) => {
                       setOpen(false);
@@ -161,7 +162,7 @@ export default function SearchBox({ onSelect }) {
                         {getYear(m.release_date)} · ⭐ {m.vote_average?.toFixed?.(1) ?? "–"}
                       </div>
                     </div>
-                  </a>
+                  </Link>
                 </li>
               ))}
               {results.length === 0 && (

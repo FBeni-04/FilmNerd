@@ -8,6 +8,7 @@ import Navbar from "./components/Navbar";
 import AuthProvider, { useAuthOptional } from "./components/AuthContext";
 import AuthModal from "./components/AuthModal";
 import { API_BASE } from "./lib/api";
+import { Link } from "react-router-dom";
 
 /**
  * ==========================
@@ -548,7 +549,7 @@ export function MovieCard({ movie }) {
 
   return (
     <div className="snap-start">
-      <a href={href}>
+      <Link to={href}>
         <Card className="w-44 min-w-[11rem] md:w-48 md:min-w-[12rem] overflow-hidden transition-transform duration-200 hover:-translate-y-0.5 hover:shadow">
           <div className="relative aspect-[2/3] bg-neutral-800">
             {poster ? (
@@ -604,6 +605,7 @@ export function MovieCard({ movie }) {
               </span>
             </div>
           </div>
+          
 
           <div className="p-3">
             <div className="line-clamp-2 text-[13px] font-semibold text-neutral-100">
@@ -617,7 +619,7 @@ export function MovieCard({ movie }) {
             )}
           </div>
         </Card>
-      </a>
+      </Link>
     </div>
   );
 }

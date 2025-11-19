@@ -2,14 +2,20 @@ from pathlib import Path
 import os
 from dotenv import load_dotenv
 from datetime import timedelta
+import dj_database_url
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
 
 DEBUG = True
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-secret-change-me")
-ALLOWED_HOSTS = ["*"]
+ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
+    "filmnerd.onrender.com",
+]
 
+database_url = os.environ.get("DATABASE_URL")
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -37,7 +43,20 @@ MIDDLEWARE = [
 ]
 
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_ALL_ORIGINS = False
+
+CORS_ALLOWED_ORIGINS = [
+    "https://fbeni-04.github.io",
+    "http://localhost:5173",
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://fbeni-04.github.io",
+    "https://filmnerd.onrender.com",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
 
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
@@ -50,23 +69,29 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
 }
-"""DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": os.environ.get("DB_NAME", "filmnerd"),
-        "USER": os.environ.get("DB_USER", "root"),
-        "PASSWORD": os.environ.get("DB_PASS", ""),
-        "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
-        "PORT": os.environ.get("DB_PORT", "3307"),
-    }
-}"""
 
-DATABASES = {
-      "default": {
-          "ENGINE": "django.db.backends.sqlite3",
-          "NAME": BASE_DIR / "db.sqlite3",
-      }
-}
+if database_url:
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=database_url,
+            conn_max_age=600,
+        )
+    }
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": os.environ.get("DB_NAME", "filmnerd"),
+            "USER": os.environ.get("DB_USER", "root"),
+            "PASSWORD": os.environ.get("DB_PASS", ""),
+            "HOST": os.environ.get("DB_HOST", "127.0.0.1"),
+            "PORT": os.environ.get("DB_PORT", "3307"),
+        }
+    }
+
+# Tesztadatbázis: használja ugyanazt a configot mirrorral
+DATABASES["default"]["TEST"] = {"MIRROR": "default"}
+
     
 
 STATIC_URL = "/static/"
