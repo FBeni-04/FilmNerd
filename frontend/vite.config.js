@@ -5,6 +5,8 @@ import tailwind from '@tailwindcss/vite'
 export default ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return defineConfig({
+    base: '/filmnerd/', //Majd törölni, ha lokálisan akarjátok tesztelni!
+
     plugins: [react(), tailwind()],
     server: {
       proxy: {
