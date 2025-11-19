@@ -4,8 +4,10 @@ import tailwind from '@tailwindcss/vite'
 
 export default ({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
+  const isGithubPages = env.GITHUB_PAGES === 'true'
+
   return defineConfig({
-    base: '/filmnerd/', //Majd törölni, ha lokálisan akarjátok tesztelni!
+    base: isGithubPages ? '/filmnerd/' : '/',
 
     plugins: [react(), tailwind()],
     server: {
