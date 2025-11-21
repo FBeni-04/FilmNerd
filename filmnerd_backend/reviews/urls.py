@@ -3,6 +3,7 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     ReviewListCreateView,
     ReviewRetrieveUpdateDestroyView,
+    UserWatchlistView,
     review_summary,
     LoginView,
     RegisterView,
@@ -79,6 +80,7 @@ urlpatterns = [
     path("users/<str:username>/lists/", UserListsView.as_view(), name="user-lists"),
     path("users/<str:username>/favourites/", UserFavouritesView.as_view(), name="user-favourites"),
     path("users/<str:username>/reviews/", UserReviewsView.as_view(), name="user-reviews"),
+    path("users/<str:username>/watchlist/", UserWatchlistView.as_view(), name="user-watchlist"),
 
     # --- Watchlist ---
     path(
