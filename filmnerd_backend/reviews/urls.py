@@ -4,6 +4,7 @@ from .views import (
     ReviewListCreateView,
     ReviewRetrieveUpdateDestroyView,
     UserWatchlistView,
+    WatchlistViewSet,
     review_summary,
     LoginView,
     RegisterView,
@@ -85,19 +86,19 @@ urlpatterns = [
     # --- Watchlist ---
     path(
         "watchlist/exists/",
-        FavouriteViewSet.as_view({"get": "exists"}),
+        WatchlistViewSet.as_view({"get": "exists"}),
         name="watchlist-exists"
     ),
 
     path(
         "watchlist/",
-        FavouriteViewSet.as_view({"get": "list", "post": "create"}),
+        WatchlistViewSet.as_view({"get": "list", "post": "create"}),
         name="watchlist-list-create"
     ),
 
     path(
         "watchlist/<str:movie_id>/",
-        FavouriteViewSet.as_view({"delete": "destroy", "get": "retrieve"}),
+        WatchlistViewSet.as_view({"delete": "destroy", "get": "retrieve"}),
         name="watchlist-rud"
     ),
 ]
