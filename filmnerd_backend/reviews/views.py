@@ -13,10 +13,10 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
 
-from .models import Review, Favourite, MovieList, MovieListItem, Follow
+from .models import Review, Favourite, MovieList, MovieListItem, Follow, Watchlist
 from .serializers import (ReviewSerializer, RegisterSerializer, LoginSerializer, MeSerializer, 
                           FavouriteSerializer, MovieListCreateUpdateSerializer, MovieListItemCreateSerializer, MovieListSerializer,
-                          FollowSerializer, FollowCreateSerializer, UserPublicSerializer)
+                          FollowSerializer, FollowCreateSerializer, UserPublicSerializer, WatchlistSerializer)
 from .permissions import IsOwnerOrReadOnly
 
 User = get_user_model()
@@ -372,3 +372,43 @@ class UserReviewsView(UsernameMixin, generics.ListAPIView):
         base_qs = Review.objects.all()
         user = self.get_user()
         return base_qs.filter(user=user)
+    
+class WatchlistViewSet(viewsets.ModelViewSet):
+    queryset = Watchlist.objects.all()
+    serializer_class = WatchlistSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "movie_id"
+    lookup_url_kwarg = "movie_id"
+
+    def get_queryset(self):
+        # Only show the current user's watchlist
+        return Watchlist.objects.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        movie_id = request.data.get("movie_id")
+        user = request.user
+
+        # Idempotent create (if it exists, just return success)
+        obj, created = Watchlist.objects.get_or_create(
+            user=user,
+            movie_id=movie_id
+        )
+        return Response({"created": created}, status=200)
+
+    def destroy(self, request, movie_id=None, *args, **kwargs):
+        # Delete based on movie_id and current user
+        Watchlist.objects.filter(
+            user=request.user,
+            movie_id=movie_id
+        ).delete()
+        return Response(status=204)
+
+    @action(detail=False, methods=["get"])
+    def exists(self, request):
+        # Check if a specific movie is in the watchlist
+        movie_id = request.query_params.get("movie_id")
+        exists = Watchlist.objects.filter(
+            user=request.user,
+            movie_id=movie_id
+        ).exists()
+        return Response({"exists": exists})

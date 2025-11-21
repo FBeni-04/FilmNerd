@@ -102,3 +102,16 @@ class Follow(models.Model):
 
     def __str__(self):
         return f"Follow({self.from_user_id} -> {self.to_user_id})"
+    
+class Watchlist(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="watchlist")
+    movie_id = models.CharField(max_length=20, db_index=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["user", "movie_id"], name="unique_watchlist_user_movie")
+        ]
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"Watchlist(user={self.user_id}, movie={self.movie_id})"

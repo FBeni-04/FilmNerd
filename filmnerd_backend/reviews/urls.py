@@ -79,4 +79,23 @@ urlpatterns = [
     path("users/<str:username>/lists/", UserListsView.as_view(), name="user-lists"),
     path("users/<str:username>/favourites/", UserFavouritesView.as_view(), name="user-favourites"),
     path("users/<str:username>/reviews/", UserReviewsView.as_view(), name="user-reviews"),
+
+    # --- Watchlist ---
+    path(
+        "watchlist/exists/",
+        FavouriteViewSet.as_view({"get": "exists"}),
+        name="watchlist-exists"
+    ),
+
+    path(
+        "watchlist/",
+        FavouriteViewSet.as_view({"get": "list", "post": "create"}),
+        name="watchlist-list-create"
+    ),
+
+    path(
+        "watchlist/<str:movie_id>/",
+        FavouriteViewSet.as_view({"delete": "destroy", "get": "retrieve"}),
+        name="watchlist-rud"
+    ),
 ]

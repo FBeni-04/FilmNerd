@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Review, User, Favourite, MovieList, MovieListItem, Follow
+from .models import Review, User, Favourite, MovieList, MovieListItem, Follow, Watchlist
 
 # reviews/serializers.py
 from rest_framework import serializers
@@ -124,3 +124,15 @@ class FollowCreateSerializer(serializers.ModelSerializer):
         if request and request.user == to_user:
             raise serializers.ValidationError("You cannot follow yourself.")
         return attrs
+    
+class WatchlistSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Watchlist
+        fields = ["id", "user_id", "movie_id"]
+        read_only_fields = ["id", "user_id"]
+
+    def validate_movie_id(self, v):
+        v = (v or "").strip()
+        if not v:
+            raise serializers.ValidationError("movie_id required")
+        return v
