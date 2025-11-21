@@ -104,6 +104,8 @@ class ReviewListCreateView(generics.ListCreateAPIView):
             },
         )
         self.existing_instance = None if created else obj
+        # ha létezőt frissítettünk, töröljük a watchlistből
+        Watchlist.objects.filter(user=user, movie_id=movie_id).delete()
         if created:
             # ha új, a DRF serializerrel mentünk (hogy before/after hookok menjenek)
             serializer.instance = obj
