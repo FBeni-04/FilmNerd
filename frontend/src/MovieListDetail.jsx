@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from './components/AuthContext';
 import { API_BASE } from './lib/api';
-import Navbar from './components//Navbar';
+import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
 import SearchBox from './components/SearchBox';
 import AuthProvider from './components/AuthContext';
