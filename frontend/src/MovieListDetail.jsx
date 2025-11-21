@@ -5,6 +5,7 @@ import { API_BASE } from './lib/api';
 import Navbar from './components//Navbar';
 import AuthModal from './components/AuthModal';
 import SearchBox from './components/SearchBox';
+import AuthProvider from './components/AuthContext';
 
 // This is a minimal TMDB API fetcher for getting movie details
 // We'll need this to show posters and titles for the movie_ids
@@ -163,6 +164,7 @@ export default function MovieListDetail() {
   }
 
 return (
+  <AuthProvider>
     <div className="min-h-dvh bg-neutral-950 text-neutral-200">
       <Navbar />
       <AuthModal show={authOpen} onClose={() => setAuthOpen(false)}/>
@@ -216,5 +218,6 @@ return (
         )}
       </div>
     </div>
+    </AuthProvider>
   );
 }

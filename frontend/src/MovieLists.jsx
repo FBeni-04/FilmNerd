@@ -4,6 +4,7 @@ import { useAuth } from './components/AuthContext';
 import { API_BASE } from './lib/api';
 import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
+import AuthProvider from './components/AuthContext';
 
 export default function MovieLists() {
   const { user, access } = useAuth();
@@ -139,6 +140,7 @@ const handleCreateList = async (e) => {
 
   // Main component render for logged-in users
   return (
+    <AuthProvider>
     <div className="min-h-dvh bg-neutral-950 text-neutral-200">
       <Navbar />
       <AuthModal show={authOpen} onClose={() => setAuthOpen(false)}/>
@@ -208,5 +210,6 @@ const handleCreateList = async (e) => {
         </div>
       </div>
     </div>
+    </AuthProvider>
   );
 }

@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "./components/Navbar";
+import AuthProvider from "./components/AuthContext";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMG = {
@@ -132,6 +133,7 @@ export default function ActorDetail({ slug, personId }) {
 
 
   return (
+    <AuthProvider>
     <div className="min-h-dvh bg-neutral-950 text-neutral-200">
       <Navbar />
       {/* CONTENT */}
@@ -270,5 +272,6 @@ export default function ActorDetail({ slug, personId }) {
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       `}</style>
     </div>
+    </AuthProvider>
   );
 }

@@ -2,6 +2,7 @@
   import ReviewBox from "./components/ReviewBox";
   import AuthModal from "./components/AuthModal";
   import { useAuthOptional } from "./components/AuthContext";
+  import AuthProvider from "./components/AuthContext";
   import { API_BASE } from "./lib/api";
   import { Link } from "react-router-dom";
   import Navbar from "./components/Navbar";
@@ -233,7 +234,7 @@
     }, [data]);
 
     return (
-
+      <AuthProvider>
       <div className="min-h-dvh bg-neutral-950 text-neutral-200">
         <Navbar />
 
@@ -520,5 +521,6 @@
           .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         `}</style>
       </div>
+      </AuthProvider>
     );
   }
