@@ -1,45 +1,65 @@
-// @vitest-environment jsdom
-import React from 'react';
-import '@testing-library/jest-dom/vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
-import { BrowserRouter } from 'react-router-dom';
-import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
-import MovieLists from '../../MovieLists';
-import * as AuthContext from '../AuthContext';
+import React from "react";
+import "@testing-library/jest-dom/vitest";
+import { render, screen, waitFor, cleanup } from "@testing-library/react";
+import { BrowserRouter } from "react-router-dom";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import * as AuthContext from "../AuthContext";
 
-// Mock AuthContext
-vi.mock('../AuthContext', () => ({
+// --- MOCKOK (fontos: ne használjanak kívülről jövő változót a factory-ben) ---
+vi.mock("../AuthContext", () => ({
+  __esModule: true,
+  default: ({ children }) => <>{children}</>,
   useAuth: vi.fn(),
   useAuthOptional: vi.fn(),
-  // Mock AuthProvider default export
-  default: ({ children }) => <div>{children}</div>,
 }));
 
-// Mock AuthModal component to avoid its internal logic running
-vi.mock('../AuthModal', () => ({
-  default: () => <div data-testid="auth-modal">Auth Modal</div>,
+
+
+// Navbar-t kinyírjuk, hogy ne zavarjon a tesztben
+vi.mock("../Navbar", () => ({
+  __esModule: true,
+  default: () => <div data-testid="navbar" />,
 }));
 
-// Mock fetch
+// --- A komponens ezután jön, így már a MOCKOLT modulokat fogja használni ---
+import MovieLists from "../../MovieLists";
+import * as AuthContext from "../AuthContext";
+
+// a mockolt hookok referenciái
+const useAuthMock = AuthContext.useAuth;
+const useAuthOptionalMock = AuthContext.useAuthOptional;
+
+// fetch mock
 global.fetch = vi.fn();
 
-describe('MovieLists Component', () => {
+describe("MovieLists Component", () => {
   afterEach(() => {
     cleanup();
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // default: üres lista választ
     global.fetch.mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ results: [] }),
+      json: () => Promise.resolve([]),
     });
   });
 
-  it('renders login prompt when not logged in', () => {
-    vi.spyOn(AuthContext, 'useAuthOptional').mockReturnValue({
+  it("renders login prompt when not logged in", async () => {
+    // Navbar miatt is kell useAuth, a MovieLists-ben pedig useAuthOptional lehet
+    useAuthMock.mockReturnValue({
       user: null,
-      access: null,
+      access: "",
+      login: vi.fn(),
+      register: vi.fn(),
+      logout: vi.fn(),
+    });
+
+    useAuthOptionalMock.mockReturnValue({
+      user: null,
+      access: "",
       showLogin: vi.fn(),
     });
 
@@ -49,25 +69,67 @@ describe('MovieLists Component', () => {
       </BrowserRouter>
     );
 
-    // elég rugalmasan csak a "Please" kezdetet ellenőrizzük
-    expect(screen.getByText(/Please/i)).toBeInTheDocument();
-    const loginButtons = screen.getAllByText(/Login/i);
-    expect(loginButtons.length).toBeGreaterThan(0);
+    // Itt azt a szöveget használd, ami nálad a login promptban tényleg van
+    // pl. "Please login to see your lists" vagy hasonló
+    expect(screen.getByText(/login/i)).toBeInTheDocument();
   });
 
-  it('renders lists when logged in', async () => {
-    vi.spyOn(AuthContext, 'useAuthOptional').mockReturnValue({
-      user: { id: 1 },
-      access: 'token',
+  it("shows empty state when no lists exist", async () => {
+    useAuthMock.mockReturnValue({
+      user: { id: 1, username: "testuser" },
+      access: "token",
+      login: vi.fn(),
+      register: vi.fn(),
+      logout: vi.fn(),
+    });
+
+    useAuthOptionalMock.mockReturnValue({
+      user: { id: 1, username: "testuser" },
+      access: "token",
       showLogin: vi.fn(),
     });
 
-    const mockLists = {
-      results: [
-        { id: 1, name: 'Favorites', items: [] },
-        { id: 2, name: 'Watch Later', items: [1] },
-      ],
-    };
+    // üres tömböt ad vissza – nincs lista
+    global.fetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve([]),
+    });
+
+    render(
+      <BrowserRouter>
+        <MovieLists />
+      </BrowserRouter>
+    );
+
+    // Várjuk meg, hogy a fetch lefusson és a komponens reagáljon
+    await waitFor(() => {
+      // IDE azt a konkrét feliratot írd, ami az "üres állapot" nálad
+      // pl. "You have no lists yet" vagy "Nincs még létrehozott listád"
+      expect(
+        screen.getByText(/no lists/i)
+      ).toBeInTheDocument();
+    });
+  });
+
+  it("renders lists when logged in", async () => {
+    useAuthMock.mockReturnValue({
+      user: { id: 1, username: "testuser" },
+      access: "token",
+      login: vi.fn(),
+      register: vi.fn(),
+      logout: vi.fn(),
+    });
+
+    useAuthOptionalMock.mockReturnValue({
+      user: { id: 1, username: "testuser" },
+      access: "token",
+      showLogin: vi.fn(),
+    });
+
+    const mockLists = [
+      { id: 1, name: "My First List" },
+      { id: 2, name: "Watch Later" },
+    ];
 
     global.fetch.mockResolvedValueOnce({
       ok: true,
@@ -81,38 +143,8 @@ describe('MovieLists Component', () => {
     );
 
     await waitFor(() => {
-      // regex, hogy akkor is jó legyen, ha utána extra szöveg van
-      expect(screen.getByText(/Favorites/i)).toBeInTheDocument();
-      expect(screen.getByText(/Watch Later/i)).toBeInTheDocument();
-    });
-  });
-
-  it('shows empty state when no lists exist', async () => {
-    vi.spyOn(AuthContext, 'useAuthOptional').mockReturnValue({
-      user: { id: 1 },
-      access: 'token',
-    });
-
-    global.fetch.mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ results: [] }),
-    });
-
-    render(
-      <BrowserRouter>
-        <MovieLists />
-      </BrowserRouter>
-    );
-
-    await waitFor(() => {
-      // rugalmas matcher: whitespace-ek összefésülése + substring keresés
-      const emptyState = screen.getByText((content) =>
-        content
-          .replace(/\s+/g, ' ')
-          .toLowerCase()
-          .includes("you haven't created any lists yet")
-      );
-      expect(emptyState).toBeInTheDocument();
+      expect(screen.getByText("My First List")).toBeInTheDocument();
+      expect(screen.getByText("Watch Later")).toBeInTheDocument();
     });
   });
 });

@@ -6,14 +6,16 @@ import { afterEach, describe, it, expect, vi, beforeEach } from "vitest";
 import MovieListDetail from "../../MovieListDetail";
 
 // 1) KÜLÖN mock függvényeket hozunk létre
+const useAuthMock = vi.fn();
 const useAuthOptionalMock = vi.fn();
 
-// 2) AuthContext mock – itt adjuk vissza a fenti függvényt
 vi.mock("../AuthContext", () => ({
   __esModule: true,
-  default: ({ children }) => <>{children}</>, // AuthProvider mock
+  default: ({ children }) => <>{children}</>,
+  useAuth: useAuthMock,
   useAuthOptional: useAuthOptionalMock,
 }));
+
 
 // 3) (opcionális) Navbar mock, hogy ne zavarjon
 vi.mock("../Navbar", () => ({
@@ -29,6 +31,7 @@ vi.mock("react-router-dom", async () => {
     useParams: vi.fn(),
   };
 });
+
 
 const mockedUseParams = useParams; // ez már egy vi.fn lesz a mock miatt
 
