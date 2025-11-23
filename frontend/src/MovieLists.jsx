@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from './components/AuthContext';
+import { useAuthOptional } from "./components/AuthContext";
 import { API_BASE } from './lib/api';
 import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
 import AuthProvider from './components/AuthContext';
 
 export default function MovieLists() {
-  const { user, access } = useAuth();
+  const auth = useAuthOptional();
+  const user = auth?.user;
+  const access = auth?.access;
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');

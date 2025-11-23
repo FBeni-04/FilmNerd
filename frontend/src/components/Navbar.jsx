@@ -83,7 +83,7 @@ export default function Navbar() {
               <Link to="/" className="rounded px-3 py-2 hover:bg-white/5">
                 Home
               </Link>
-              <a className="  rounded px-3 py-2 hover:bg-white/5" href="#">Lists</a>
+              <Link className="  rounded px-3 py-2 hover:bg-white/5" to="/lists">Lists</Link>
               <a className="rounded px-3 py-2 hover:bg-white/5" href="#">Search</a>
               {user ? (
               <Link to="/profile" className="hover:text-white">

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { useAuth } from './components/AuthContext';
+import { useAuthOptional } from './components/AuthContext';
 import { API_BASE } from './lib/api';
 import Navbar from './components/Navbar';
 import AuthModal from './components/AuthModal';
@@ -34,7 +34,9 @@ const fetchMovieData = async (movieId) => {
 
 export default function MovieListDetail() {
   const { listId } = useParams(); // Get the list ID from the URL
-  const { user, access } = useAuth();
+  const auth = useAuthOptional();
+  const user = auth?.user;
+  const access = auth?.access;
   const [list, setList] = useState(null);
   const [items, setItems] = useState([]); // State to hold movie details
   const [loading, setLoading] = useState(true);
