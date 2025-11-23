@@ -1,39 +1,41 @@
-// @vitest-environment jsdom
-import React from 'react';
-import '@testing-library/jest-dom/vitest';
-import { render, screen, waitFor, cleanup } from '@testing-library/react';
-import { BrowserRouter, useParams } from 'react-router-dom';
-import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
-import MovieListDetail from '../../MovieListDetail';
-import * as AuthContext from '../AuthContext';
+import React from "react";
+import "@testing-library/jest-dom/vitest";
+import { render, screen, waitFor, cleanup } from "@testing-library/react";
+import { BrowserRouter, useParams } from "react-router-dom";
+import { afterEach, describe, it, expect, vi, beforeEach } from "vitest";
+import MovieListDetail from "../../MovieListDetail";
 
-// --- Mock AuthContext: useAuthOptional-t fogunk használni ---
-vi.mock('../AuthContext', () => ({
-  useAuthOptional: vi.fn(),
-  default: ({ children }) => <div>{children}</div>,
+// 1) KÜLÖN mock függvényeket hozunk létre
+const useAuthOptionalMock = vi.fn();
+
+// 2) AuthContext mock – itt adjuk vissza a fenti függvényt
+vi.mock("../AuthContext", () => ({
+  __esModule: true,
+  default: ({ children }) => <>{children}</>, // AuthProvider mock
+  useAuthOptional: useAuthOptionalMock,
 }));
 
-// Mock AuthModal
-vi.mock('../AuthModal', () => ({
-  default: () => <div>Auth Modal</div>,
+// 3) (opcionális) Navbar mock, hogy ne zavarjon
+vi.mock("../Navbar", () => ({
+  __esModule: true,
+  default: () => <div data-testid="navbar" />,
 }));
 
-// Mock useParams (megtartjuk az eredeti BrowserRouter-t, csak useParams-t írjuk felül)
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
+// 4) react-router-dom mock: csak useParams-t írjuk felül
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
   return {
     ...actual,
     useParams: vi.fn(),
   };
 });
 
-// Mock fetch
+const mockedUseParams = useParams; // ez már egy vi.fn lesz a mock miatt
+
+// 5) fetch mock
 global.fetch = vi.fn();
 
-describe('MovieListDetail Component', () => {
-  const useAuthOptionalMock = AuthContext
-    .useAuthOptional;
-
+describe("MovieListDetail Component", () => {
   afterEach(() => {
     cleanup();
   });
@@ -47,14 +49,15 @@ describe('MovieListDetail Component', () => {
     });
   });
 
-  it('renders login prompt when not logged in', () => {
+  it("renders login prompt when not logged in", () => {
+    // Itt már simán használhatod:
     useAuthOptionalMock.mockReturnValue({
       user: null,
       access: null,
       showLogin: vi.fn(),
     });
 
-    vi.mocked(useParams).mockReturnValue({ listId: '1' });
+    mockedUseParams.mockReturnValue({ listId: "1" });
 
     render(
       <BrowserRouter>
@@ -67,28 +70,27 @@ describe('MovieListDetail Component', () => {
     expect(loginButtons.length).toBeGreaterThan(0);
   });
 
-  it('renders list details when logged in', async () => {
+  it("renders list details when logged in", async () => {
     useAuthOptionalMock.mockReturnValue({
       user: { id: 1 },
-      access: 'token',
+      access: "token",
       showLogin: vi.fn(),
     });
 
-    vi.mocked(useParams).mockReturnValue({ listId: '1' });
+    mockedUseParams.mockReturnValue({ listId: "1" });
 
     const mockList = {
       id: 1,
-      name: 'My Awesome List',
-      items: [{ movie_id: '123' }],
+      name: "My Awesome List",
+      items: [{ movie_id: "123" }],
     };
 
     const mockMovie = {
       id: 123,
-      title: 'The Matrix',
-      poster_path: '/poster.jpg',
+      title: "The Matrix",
+      poster_path: "/poster.jpg",
     };
 
-    // Mock fetch calls: first for list, then for movie
     global.fetch
       .mockResolvedValueOnce({
         ok: true,
@@ -106,8 +108,8 @@ describe('MovieListDetail Component', () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText('My Awesome List')).toBeInTheDocument();
-      expect(screen.getByText('The Matrix')).toBeInTheDocument();
+      expect(screen.getByText("My Awesome List")).toBeInTheDocument();
+      expect(screen.getByText("The Matrix")).toBeInTheDocument();
     });
   });
 });

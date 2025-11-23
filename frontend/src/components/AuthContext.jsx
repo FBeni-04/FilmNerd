@@ -6,7 +6,13 @@ const AuthCtx = createContext(null);
 export function useAuth() {
   const ctx = useContext(AuthCtx);
   if (ctx === null) {
-    throw new Error("useAuth must be used within <AuthProvider>");
+    return {
+      user: null,
+      access: "",
+      login: () => {},
+      register: () => {},
+      logout: () => {},
+    };
   }
   return ctx;
 }
