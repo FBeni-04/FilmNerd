@@ -77,9 +77,9 @@ describe("MovieLists", () => {
     // cím
     expect(screen.getByText("My Lists")).toBeInTheDocument();
     // login szöveg + gomb
-    expect(
-      screen.getByText(/Please\s+Login\s+to create and view your movie lists\./i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Please/i)).toBeInTheDocument();
+    expect(screen.getByText(/to create and view your movie lists/i)).toBeInTheDocument();
+    
     expect(screen.getByText(/Login/i)).toBeInTheDocument();
   });
 

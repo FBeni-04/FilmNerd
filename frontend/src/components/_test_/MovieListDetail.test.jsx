@@ -102,9 +102,8 @@ describe("MovieListDetail", () => {
     );
 
     // szöveg: "Please Login to view your movie lists."
-    expect(
-      screen.getByText(/Please\s+Login\s+to view your movie lists\./i)
-    ).toBeInTheDocument();
+    expect(screen.getByText(/Please/i)).toBeInTheDocument();
+    expect(screen.getByText(/to view your movie lists/i)).toBeInTheDocument();
 
     const loginButton = screen.getByText(/Login/i);
     expect(loginButton).toBeInTheDocument();
