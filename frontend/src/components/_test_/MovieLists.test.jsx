@@ -1,6 +1,6 @@
 import React from "react";
 import "@testing-library/jest-dom/vitest";
-import { render, screen, waitFor, cleanup } from "@testing-library/react";
+import { render, screen, cleanup } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
@@ -42,15 +42,10 @@ describe("MovieLists Component", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    // default: üres lista választ
-    global.fetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve([]),
-    });
+    global.fetch.mockReset();
   });
 
-  it("renders login prompt when not logged in", async () => {
+  it("renders login prompt when not logged in", () => {
     // Navbar miatt is kell useAuth, a MovieLists-ben pedig useAuthOptional
     useAuthMock.mockReturnValue({
       user: null,
@@ -72,6 +67,7 @@ describe("MovieLists Component", () => {
       </BrowserRouter>
     );
 
+    // valamilyen login prompt – pl. gomb vagy szöveg
     expect(screen.getByText(/login/i)).toBeInTheDocument();
   });
 
@@ -102,11 +98,9 @@ describe("MovieLists Component", () => {
       </BrowserRouter>
     );
 
-    await waitFor(() => {
-      // IDE azt a konkrét szöveget írd, ami az üres állapotodban van
-      // ha nem "no lists", akkor módosítsd a regexet
-      expect(screen.getByText(/no lists/i)).toBeInTheDocument();
-    });
+    expect(
+      await screen.findByText("You haven't created any lists yet.")
+    ).toBeInTheDocument();
   });
 
   it("renders lists when logged in", async () => {
@@ -140,9 +134,7 @@ describe("MovieLists Component", () => {
       </BrowserRouter>
     );
 
-    await waitFor(() => {
-      expect(screen.getByText("My First List")).toBeInTheDocument();
-      expect(screen.getByText("Watch Later")).toBeInTheDocument();
-    });
+    expect(await screen.findByText("My First List")).toBeInTheDocument();
+    expect(await screen.findByText("Watch Later")).toBeInTheDocument();
   });
 });

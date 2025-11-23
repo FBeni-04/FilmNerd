@@ -1,6 +1,6 @@
 import React from "react";
 import "@testing-library/jest-dom/vitest";
-import { render, screen, waitFor, cleanup } from "@testing-library/react";
+import { render, screen, cleanup } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { afterEach, describe, it, expect, vi, beforeEach } from "vitest";
 
@@ -53,11 +53,7 @@ describe("MovieListDetail Component", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-
-    global.fetch.mockResolvedValue({
-      ok: true,
-      json: () => Promise.resolve({}),
-    });
+    global.fetch.mockReset();
   });
 
   it("renders login prompt when not logged in", () => {
@@ -84,12 +80,15 @@ describe("MovieListDetail Component", () => {
       </BrowserRouter>
     );
 
-    expect(screen.getByText(/Please/i)).toBeInTheDocument();
-    const loginButtons = screen.getAllByText(/Login/i);
+    // valamilyen "Please ... login" szöveg
+    expect(screen.getByText(/please/i)).toBeInTheDocument();
+
+    // legalább egy Login feliratú gomb / link
+    const loginButtons = screen.getAllByText(/login/i);
     expect(loginButtons.length).toBeGreaterThan(0);
   });
 
-  it("renders list details when logged in", async () => {
+  it("renders list details and movies when logged in", async () => {
     useAuthMock.mockReturnValue({
       user: { id: 1 },
       access: "token",
@@ -106,10 +105,10 @@ describe("MovieListDetail Component", () => {
 
     mockedUseParams.mockReturnValue({ listId: "1" });
 
-    const mockList = {
+    const mockListDetail = {
       id: 1,
       name: "My Awesome List",
-      items: [{ movie_id: "123" }],
+      movies: [{ tmdb_id: 123 }],
     };
 
     const mockMovie = {
@@ -118,10 +117,12 @@ describe("MovieListDetail Component", () => {
       poster_path: "/poster.jpg",
     };
 
+    // 1. fetch → backend lista részletek
+    // 2. fetch → TMDB film
     global.fetch
       .mockResolvedValueOnce({
         ok: true,
-        json: () => Promise.resolve(mockList),
+        json: () => Promise.resolve(mockListDetail),
       })
       .mockResolvedValueOnce({
         ok: true,
@@ -134,9 +135,10 @@ describe("MovieListDetail Component", () => {
       </BrowserRouter>
     );
 
-    await waitFor(() => {
-      expect(screen.getByText("My Awesome List")).toBeInTheDocument();
-      expect(screen.getByText("The Matrix")).toBeInTheDocument();
-    });
+    // lista neve megjelenik
+    expect(await screen.findByText("My Awesome List")).toBeInTheDocument();
+
+    // film címe megjelenik
+    expect(await screen.findByText("The Matrix")).toBeInTheDocument();
   });
 });
