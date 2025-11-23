@@ -3,25 +3,28 @@ import "@testing-library/jest-dom/vitest";
 import { render, screen, waitFor, cleanup } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import * as AuthContext from "../AuthContext";
 
-// --- MOCKOK (fontos: ne használjanak kívülről jövő változót a factory-ben) ---
-vi.mock("../AuthContext", () => ({
-  __esModule: true,
-  default: ({ children }) => <>{children}</>,
-  useAuth: vi.fn(),
-  useAuthOptional: vi.fn(),
-}));
+// 1) AuthContext mock – a factory-n belül hozzuk létre a vi.fn()-eket
+vi.mock("../AuthContext", () => {
+  const useAuth = vi.fn();
+  const useAuthOptional = vi.fn();
+  const AuthProvider = ({ children }) => <>{children}</>;
 
+  return {
+    __esModule: true,
+    default: AuthProvider,
+    useAuth,
+    useAuthOptional,
+  };
+});
 
-
-// Navbar-t kinyírjuk, hogy ne zavarjon a tesztben
+// 2) Navbar mock – ne húzza be a valódi useAuth-ot
 vi.mock("../Navbar", () => ({
   __esModule: true,
   default: () => <div data-testid="navbar" />,
 }));
 
-// --- A komponens ezután jön, így már a MOCKOLT modulokat fogja használni ---
+// 3) A komponens ezután jön, így már a MOCKOLT modulokat fogja használni
 import MovieLists from "../../MovieLists";
 import * as AuthContext from "../AuthContext";
 
@@ -48,7 +51,7 @@ describe("MovieLists Component", () => {
   });
 
   it("renders login prompt when not logged in", async () => {
-    // Navbar miatt is kell useAuth, a MovieLists-ben pedig useAuthOptional lehet
+    // Navbar miatt is kell useAuth, a MovieLists-ben pedig useAuthOptional
     useAuthMock.mockReturnValue({
       user: null,
       access: "",
@@ -69,8 +72,6 @@ describe("MovieLists Component", () => {
       </BrowserRouter>
     );
 
-    // Itt azt a szöveget használd, ami nálad a login promptban tényleg van
-    // pl. "Please login to see your lists" vagy hasonló
     expect(screen.getByText(/login/i)).toBeInTheDocument();
   });
 
@@ -101,13 +102,10 @@ describe("MovieLists Component", () => {
       </BrowserRouter>
     );
 
-    // Várjuk meg, hogy a fetch lefusson és a komponens reagáljon
     await waitFor(() => {
-      // IDE azt a konkrét feliratot írd, ami az "üres állapot" nálad
-      // pl. "You have no lists yet" vagy "Nincs még létrehozott listád"
-      expect(
-        screen.getByText(/no lists/i)
-      ).toBeInTheDocument();
+      // IDE azt a konkrét szöveget írd, ami az üres állapotodban van
+      // ha nem "no lists", akkor módosítsd a regexet
+      expect(screen.getByText(/no lists/i)).toBeInTheDocument();
     });
   });
 
