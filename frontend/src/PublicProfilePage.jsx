@@ -47,9 +47,11 @@ export default function PublicProfilePage() {
   const [user, setUser] = useState(null);
   const [lists, setLists] = useState([]);
   const [favourites, setFavourites] = useState([]);
+  const [watchlist, setWatchlist] = useState([]);
   const [reviews, setReviews] = useState([]);
 
   const [favMovies, setFavMovies] = useState([]);
+  const [watchlistMovies, setWatchlistMovies] = useState([]);
   const [reviewMovies, setReviewMovies] = useState([]);
 
   const [followers, setFollowers] = useState([]);
@@ -106,6 +108,16 @@ export default function PublicProfilePage() {
         let favList = Array.isArray(favData) ? favData : favData.results;
         if (!Array.isArray(favList)) favList = [];
         setFavourites(favList);
+
+        const watchRes = await fetch(
+            `${API_BASE}/users/${username}/watchlist/`, 
+            { headers: authHeaders }
+        );
+        const watchData = await watchRes.json();
+        let watchList = Array.isArray(watchData) ? watchData : watchData.results;
+        if (!Array.isArray(watchList)) watchList = [];
+        setWatchlist(watchList);
+        
 
         const revRes = await fetch(
           `${API_BASE}/users/${username}/reviews/`,
@@ -177,6 +189,26 @@ export default function PublicProfilePage() {
 
     loadFavMovies();
   }, [favourites]);
+
+  useEffect(() => {
+    async function loadWatchlistMovies() {
+      if (!watchlist.length) {
+        setWatchlistMovies([]);
+        return;
+      }
+
+      const results = await Promise.all(
+        watchlist.map(async (w) => {
+          const tmdb = await fetchMovieDetails(w.movie_id);
+          return tmdb || null;
+        })
+      );
+
+      setWatchlistMovies(results.filter(Boolean));
+    }
+
+    loadWatchlistMovies();
+  }, [watchlist]);
 
   useEffect(() => {
     async function loadReviewMovies() {
@@ -331,7 +363,7 @@ export default function PublicProfilePage() {
                   )}
                 </section>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                   <div className="bg-neutral-900 p-4 rounded-xl border border-white/10 text-center">
                     <div className="text-xs text-neutral-400">Lists</div>
                     <div className="text-xl font-semibold">{lists.length}</div>
@@ -346,6 +378,12 @@ export default function PublicProfilePage() {
                     <div className="text-xs text-neutral-400">Favourites</div>
                     <div className="text-xl font-semibold">
                       {favourites.length}
+                    </div>
+                  </div>
+                  <div className="bg-neutral-900 p-4 rounded-xl border border-white/10 text-center">
+                    <div className="text-xs text-neutral-400">Watchlist</div>
+                    <div className="text-xl font-semibold">
+                      {watchlist.length}
                     </div>
                   </div>
                 </div>
@@ -480,6 +518,28 @@ export default function PublicProfilePage() {
                   ) : (
                     <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
                       {favMovies.map((m) => (
+                        <MovieCard key={m.id || m._sourceId} movie={m} />
+                      ))}
+                    </div>
+                  )}
+                </section>
+                
+                <section>
+                  <h2 className="text-lg font-bold tracking-tight text-neutral-100 mb-3">
+                    Watchlist
+                  </h2>
+
+                  {watchlist.length === 0 ? (
+                    <p className="text-neutral-400 text-sm">
+                      This user doesn't have any movies in their watchlist yet.
+                    </p>
+                  ) : !watchlistMovies.length ? (
+                    <p className="text-neutral-400 text-sm">
+                      Loading watchlist movies...
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {watchlistMovies.map((m) => (
                         <MovieCard key={m.id || m._sourceId} movie={m} />
                       ))}
                     </div>

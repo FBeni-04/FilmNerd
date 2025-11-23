@@ -13,10 +13,10 @@ from rest_framework.permissions import IsAuthenticated
 from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
 
-from .models import Review, Favourite, MovieList, MovieListItem, Follow
+from .models import Review, Favourite, MovieList, MovieListItem, Follow, Watchlist
 from .serializers import (ReviewSerializer, RegisterSerializer, LoginSerializer, MeSerializer, 
                           FavouriteSerializer, MovieListCreateUpdateSerializer, MovieListItemCreateSerializer, MovieListSerializer,
-                          FollowSerializer, FollowCreateSerializer, UserPublicSerializer)
+                          FollowSerializer, FollowCreateSerializer, UserPublicSerializer, WatchlistSerializer)
 from .permissions import IsOwnerOrReadOnly
 
 User = get_user_model()
@@ -104,6 +104,8 @@ class ReviewListCreateView(generics.ListCreateAPIView):
             },
         )
         self.existing_instance = None if created else obj
+        # ha létezőt frissítettünk, töröljük a watchlistből
+        Watchlist.objects.filter(user=user, movie_id=movie_id).delete()
         if created:
             # ha új, a DRF serializerrel mentünk (hogy before/after hookok menjenek)
             serializer.instance = obj
@@ -303,6 +305,41 @@ class FriendsListView(APIView):
         users = User.objects.filter(id__in=mutual_ids)
         return Response(UserPublicSerializer(users, many=True).data)
     
+class WatchlistViewSet(viewsets.ModelViewSet):
+    queryset = Watchlist.objects.all()
+    serializer_class = WatchlistSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    lookup_field = "movie_id"
+    lookup_url_kwarg = "movie_id"
+
+    def get_queryset(self):
+        return Watchlist.objects.filter(user=self.request.user)
+
+    def create(self, request, *args, **kwargs):
+        movie_id = request.data.get("movie_id")
+        user = request.user
+
+        obj, created = Watchlist.objects.get_or_create(
+            user=user,
+            movie_id=movie_id
+        )
+        return Response({"created": created}, status=200)
+
+    def destroy(self, request, movie_id=None, *args, **kwargs):
+        Watchlist.objects.filter(
+            user=request.user,
+            movie_id=movie_id
+        ).delete()
+        return Response(status=204)
+
+    @action(detail=False, methods=["get"])
+    def exists(self, request):
+        movie_id = request.query_params.get("movie_id")
+        exists = Watchlist.objects.filter(
+            user=request.user,
+            movie_id=movie_id
+        ).exists()
+        return Response({"exists": exists})
 
 class UserPublicProfileView(generics.RetrieveAPIView):
     """
@@ -372,3 +409,16 @@ class UserReviewsView(UsernameMixin, generics.ListAPIView):
         base_qs = Review.objects.all()
         user = self.get_user()
         return base_qs.filter(user=user)
+
+class UserWatchlistView(UsernameMixin, generics.ListAPIView):
+    """
+    GET /api/users/<username>/watchlist/
+    """
+    serializer_class = WatchlistSerializer
+    permission_classes = [permissions.AllowAny]
+
+    def get_queryset(self):
+        base_qs = Watchlist.objects.all()
+        user = self.get_user()
+        return base_qs.filter(user=user)
+    
