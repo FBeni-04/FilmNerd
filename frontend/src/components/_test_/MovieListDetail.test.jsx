@@ -1,10 +1,11 @@
+// src/components/__tests__/MovieListDetail.test.jsx
 import React from "react";
 import "@testing-library/jest-dom/vitest";
 import { render, screen, cleanup } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
-import { afterEach, describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
-// 1) AuthContext mock – itt HOZZUK LÉTRE a vi.fn()-eket
+// 1) AuthContext mock – itt hozzuk létre a vi.fn()-eket
 vi.mock("../AuthContext", () => {
   const useAuth = vi.fn();
   const useAuthOptional = vi.fn();
@@ -24,7 +25,28 @@ vi.mock("../Navbar", () => ({
   default: () => <div data-testid="navbar" />,
 }));
 
-// 3) react-router-dom mock: csak useParams-t írjuk felül
+// 3) AuthModal mock
+vi.mock("../AuthModal", () => ({
+  __esModule: true,
+  default: ({ show }) =>
+    show ? <div data-testid="auth-modal">AuthModal</div> : null,
+}));
+
+// 4) SearchBox mock
+vi.mock("../SearchBox", () => ({
+  __esModule: true,
+  default: ({ onSelect }) => (
+    <div
+      data-testid="search-box"
+      // ha szeretnéd, tesztben hívható lenne így:
+      // onClick={() => onSelect && onSelect(999)}
+    >
+      SearchBox
+    </div>
+  ),
+}));
+
+// 5) react-router-dom mock: csak useParams-t írjuk felül
 vi.mock("react-router-dom", async () => {
   const actual = await vi.importActual("react-router-dom");
   return {
@@ -33,31 +55,30 @@ vi.mock("react-router-dom", async () => {
   };
 });
 
-// 4) MOST jönnek az importok – már a mockolt modulokra mutatnak
+// 6) MOST jönnek az importok – már a mockolt modulokra mutatnak
 import MovieListDetail from "../../MovieListDetail";
 import * as AuthContext from "../AuthContext";
 import { useParams } from "react-router-dom";
 
-// mockolt hookok, amiket használni fogunk a tesztekben
+// mockolt hookok referenciái
 const useAuthMock = AuthContext.useAuth;
 const useAuthOptionalMock = AuthContext.useAuthOptional;
 const mockedUseParams = useParams;
 
-// 5) fetch mock
+// fetch mock
 global.fetch = vi.fn();
 
-describe("MovieListDetail Component", () => {
-  afterEach(() => {
-    cleanup();
-  });
-
+describe("MovieListDetail", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     global.fetch.mockReset();
   });
 
-  it("renders login prompt when not logged in", () => {
-    // Navbar miatt is kell useAuth, MovieListDetail-nek useAuthOptional
+  afterEach(() => {
+    cleanup();
+  });
+
+  it("login nélkül a belépési felszólítást mutatja", () => {
     useAuthMock.mockReturnValue({
       user: null,
       access: "",
@@ -80,54 +101,69 @@ describe("MovieListDetail Component", () => {
       </BrowserRouter>
     );
 
-    // valamilyen "Please ... login" szöveg
-    expect(screen.getByText(/please/i)).toBeInTheDocument();
+    // szöveg: "Please Login to view your movie lists."
+    expect(
+      screen.getByText(/Please\s+Login\s+to view your movie lists\./i)
+    ).toBeInTheDocument();
 
-    // legalább egy Login feliratú gomb / link
-    const loginButtons = screen.getAllByText(/login/i);
-    expect(loginButtons.length).toBeGreaterThan(0);
+    const loginButton = screen.getByText(/Login/i);
+    expect(loginButton).toBeInTheDocument();
   });
 
-  it("renders list details and movies when logged in", async () => {
+  it("belépett usernél megjeleníti a lista nevét és a filmeket", async () => {
     useAuthMock.mockReturnValue({
-      user: { id: 1 },
-      access: "token",
+      user: { id: 1, username: "testuser" },
+      access: "token-123",
       login: vi.fn(),
       register: vi.fn(),
       logout: vi.fn(),
     });
 
     useAuthOptionalMock.mockReturnValue({
-      user: { id: 1 },
-      access: "token",
+      user: { id: 1, username: "testuser" },
+      access: "token-123",
       showLogin: vi.fn(),
     });
 
-    mockedUseParams.mockReturnValue({ listId: "1" });
+    mockedUseParams.mockReturnValue({ listId: "42" });
 
-    const mockListDetail = {
-      id: 1,
-      name: "My Awesome List",
-      movies: [{ tmdb_id: 123 }],
+    const mockList = {
+      id: 42,
+      name: "My Sci-Fi List",
+      items: [{ movie_id: 101 }],
     };
 
-    const mockMovie = {
-      id: 123,
-      title: "The Matrix",
-      poster_path: "/poster.jpg",
-    };
+    // backend + TMDB hívások szétválasztása URL alapján
+    global.fetch.mockImplementation((url, options = {}) => {
+      const urlStr = String(url);
 
-    // 1. fetch → backend lista részletek
-    // 2. fetch → TMDB film
-    global.fetch
-      .mockResolvedValueOnce({
+      // 1) backend: GET /lists/:id/
+      if (urlStr.includes("/lists/") && (!options.method || options.method === "GET")) {
+        return Promise.resolve({
+          ok: true,
+          json: () => Promise.resolve(mockList),
+        });
+      }
+
+      // 2) TMDB hívás
+      if (urlStr.includes("api.themoviedb.org")) {
+        return Promise.resolve({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              id: 101,
+              title: "The Matrix",
+              poster_path: "/matrix.jpg",
+            }),
+        });
+      }
+
+      // fallback (nem kéne, de legyen)
+      return Promise.resolve({
         ok: true,
-        json: () => Promise.resolve(mockListDetail),
-      })
-      .mockResolvedValueOnce({
-        ok: true,
-        json: () => Promise.resolve(mockMovie),
+        json: () => Promise.resolve({}),
       });
+    });
 
     render(
       <BrowserRouter>
@@ -135,10 +171,9 @@ describe("MovieListDetail Component", () => {
       </BrowserRouter>
     );
 
-    // lista neve megjelenik
-    expect(await screen.findByText("My Awesome List")).toBeInTheDocument();
-
-    // film címe megjelenik
+    // lista neve
+    expect(await screen.findByText("My Sci-Fi List")).toBeInTheDocument();
+    // film címe
     expect(await screen.findByText("The Matrix")).toBeInTheDocument();
   });
 });
