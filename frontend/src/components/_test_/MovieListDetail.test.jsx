@@ -1,24 +1,23 @@
-// @vitest-environment jsdom
 import React from 'react';
 import '@testing-library/jest-dom/vitest';
 import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import { BrowserRouter, useParams } from 'react-router-dom';
-import {afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
+import { afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
 import MovieListDetail from '../../MovieListDetail';
 import * as AuthContext from '../AuthContext';
 
-// Mock AuthContext
+// --- Mock AuthContext: useAuthOptional-t fogunk használni ---
 vi.mock('../AuthContext', () => ({
-  useAuth: vi.fn(),
+  useAuthOptional: vi.fn(),
   default: ({ children }) => <div>{children}</div>,
 }));
 
 // Mock AuthModal
 vi.mock('../AuthModal', () => ({
-  default: () => <div>Auth Modal</div>
+  default: () => <div>Auth Modal</div>,
 }));
 
-// Mock useParams
+// Mock useParams (megtartjuk az eredeti BrowserRouter-t, csak useParams-t írjuk felül)
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -31,19 +30,29 @@ vi.mock('react-router-dom', async () => {
 global.fetch = vi.fn();
 
 describe('MovieListDetail Component', () => {
-    afterEach(() => {
+  const useAuthOptionalMock = AuthContext
+    .useAuthOptional;
+
+  afterEach(() => {
     cleanup();
   });
+
   beforeEach(() => {
     vi.clearAllMocks();
+
     global.fetch.mockResolvedValue({
-        ok: true,
-        json: () => Promise.resolve({}),
+      ok: true,
+      json: () => Promise.resolve({}),
     });
   });
 
   it('renders login prompt when not logged in', () => {
-    vi.spyOn(AuthContext, 'useAuth').mockReturnValue({ user: null });
+    useAuthOptionalMock.mockReturnValue({
+      user: null,
+      access: null,
+      showLogin: vi.fn(),
+    });
+
     vi.mocked(useParams).mockReturnValue({ listId: '1' });
 
     render(
@@ -58,22 +67,24 @@ describe('MovieListDetail Component', () => {
   });
 
   it('renders list details when logged in', async () => {
-    vi.spyOn(AuthContext, 'useAuth').mockReturnValue({ 
-      user: { id: 1 }, 
-      access: 'token' 
+    useAuthOptionalMock.mockReturnValue({
+      user: { id: 1 },
+      access: 'token',
+      showLogin: vi.fn(),
     });
+
     vi.mocked(useParams).mockReturnValue({ listId: '1' });
 
     const mockList = {
       id: 1,
       name: 'My Awesome List',
-      items: [{ movie_id: '123' }]
+      items: [{ movie_id: '123' }],
     };
 
     const mockMovie = {
       id: 123,
       title: 'The Matrix',
-      poster_path: '/poster.jpg'
+      poster_path: '/poster.jpg',
     };
 
     // Mock fetch calls: first for list, then for movie
