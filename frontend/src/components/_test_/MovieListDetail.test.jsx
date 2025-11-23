@@ -16,7 +16,6 @@ vi.mock("../AuthContext", () => ({
   useAuthOptional: useAuthOptionalMock,
 }));
 
-
 // 3) (opcionális) Navbar mock, hogy ne zavarjon
 vi.mock("../Navbar", () => ({
   __esModule: true,
@@ -31,7 +30,6 @@ vi.mock("react-router-dom", async () => {
     useParams: vi.fn(),
   };
 });
-
 
 const mockedUseParams = useParams; // ez már egy vi.fn lesz a mock miatt
 
