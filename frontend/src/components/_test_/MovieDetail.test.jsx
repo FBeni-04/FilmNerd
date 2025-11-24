@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import React from 'react';
 import '@testing-library/jest-dom/vitest';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, waitFor, cleanup } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import {afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
 import MovieDetail from '../../MovieDetail';
 import * as AuthContext from '../AuthContext';
+
 
 // Mock AuthContext
 vi.mock('../AuthContext', () => ({
@@ -19,7 +20,7 @@ vi.mock('../AuthModal', () => ({ default: () => <div>AuthModal</div> }));
 vi.mock('../AddToListModel', () => ({ default: () => <div>AddToListModel</div> }));
 vi.mock('../Navbar', () => ({ default: () => <div>Navbar</div> }));
 
-global.fetch = vi.fn();
+globalThis.fetch = vi.fn();
 
 const mockMovieData = {
   id: 123,
@@ -40,7 +41,7 @@ describe('MovieDetail Component', () => {
   });
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch.mockImplementation((url) => {
+    globalThis.fetch.mockImplementation((url) => {
       if (url.includes('/movie/')) return Promise.resolve({ ok: true, json: () => Promise.resolve(mockMovieData) });
       if (url.includes('/reviews/summary')) return Promise.resolve({ ok: true, json: () => Promise.resolve({ count: 0, avg: 0 }) });
       if (url.includes('/favourites/exists')) return Promise.resolve({ ok: true, json: () => Promise.resolve({ exists: false }) });

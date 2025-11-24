@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import AuthProvider from "./components/AuthContext";
+import { parsePersonSlug } from "./lib/slugs";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMG = {
@@ -16,11 +17,6 @@ const TMDB_IMG = {
 
 const tmdbApiKey = import.meta.env.VITE_TMDB_API_KEY;
 
-// „578-ridley-scott” → 578 (fallback, ha egyszer slugot használsz)
-export function parsePersonSlug(slug = "") {
-  const m = String(slug).trim().match(/^(\d+)/);
-  return m ? Number(m[1]) : null;
-}
 
 export default function DirectorDetail({ slug, personId }) {
   const params = useParams();
@@ -70,8 +66,13 @@ export default function DirectorDetail({ slug, personId }) {
 
   const profile = data?.profile_path ? TMDB_IMG.w500(data.profile_path) : null;
 
-  const birthday = data?.birthday ? new Date(data.birthday) : null;
-  const deathday = data?.deathday ? new Date(data.deathday) : null;
+  const birthday = useMemo(() => {
+      return data?.birthday ? new Date(data.birthday) : null;
+    }, [data?.birthday]);
+  
+  const deathday = useMemo(() => {
+    return data?.deathday ? new Date(data.deathday) : null;
+  }, [data?.deathday]);
 
   const birthYear = birthday ? birthday.getFullYear() : null;
   const deathYear = deathday ? deathday.getFullYear() : null;

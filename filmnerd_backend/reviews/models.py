@@ -11,6 +11,7 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
 
+
 class Review(models.Model):
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -36,7 +37,8 @@ class Review(models.Model):
 
     def __str__(self):
         return f"Review(user={self.user_id}, movie={self.movie_id}, rating={self.rating})"
-    
+
+
 class Favourite(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="favourites")
     movie_id = models.CharField(max_length=20, db_index=True)
@@ -50,9 +52,9 @@ class Favourite(models.Model):
     def __str__(self):
         return f"Favourite(user={self.user_id}, movie={self.movie_id})"
 
-#for Creating list
+
+# for Creating list
 class MovieList(models.Model):
-    
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="movie_lists")
     name = models.CharField(max_length=100)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -66,8 +68,8 @@ class MovieList(models.Model):
     def __str__(self):
         return f"MovieList(user={self.user.username}, name={self.name})"
 
+
 class MovieListItem(models.Model):
-    
     movie_list = models.ForeignKey(MovieList, on_delete=models.CASCADE, related_name="items")
     movie_id = models.CharField(max_length=20, db_index=True)
     added_at = models.DateTimeField(auto_now_add=True)
@@ -80,6 +82,7 @@ class MovieListItem(models.Model):
 
     def __str__(self):
         return f"MovieListItem(list={self.movie_list_id}, movie={self.movie_id})"
+
 
 class Follow(models.Model):
     from_user = models.ForeignKey(
@@ -102,7 +105,8 @@ class Follow(models.Model):
 
     def __str__(self):
         return f"Follow({self.from_user_id} -> {self.to_user_id})"
-    
+
+
 class Watchlist(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="watchlist")
     movie_id = models.CharField(max_length=20, db_index=True)

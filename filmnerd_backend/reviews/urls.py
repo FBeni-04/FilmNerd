@@ -59,14 +59,14 @@ urlpatterns = [
     ),
 
     # --- CreatingList ---
-    path('lists/<int:list_pk>/items/', 
-         MovieListItemCreateView.as_view(), 
+    path('lists/<int:list_pk>/items/',
+         MovieListItemCreateView.as_view(),
          name='listitem-create'),
-         
-    path('lists/<int:list_pk>/items/<str:movie_id>/', 
-         MovieListItemDestroyView.as_view(), 
+
+    path('lists/<int:list_pk>/items/<str:movie_id>/',
+         MovieListItemDestroyView.as_view(),
          name='listitem-destroy'),
-    path('',include(router.urls)),
+    path('', include(router.urls)),
 
     # --- Social (Follow/Friends) ---
     path("social/follow/", FollowCreateView.as_view(), name="follow-create"),

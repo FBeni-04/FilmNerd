@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Navbar from "./components/Navbar";
 import AuthProvider from "./components/AuthContext";
+import { parsePersonSlug } from "./lib/slugs";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const TMDB_IMG = {
@@ -15,12 +16,6 @@ const TMDB_IMG = {
 };
 
 const tmdbApiKey = import.meta.env.VITE_TMDB_API_KEY;
-
-// „287-brad-pitt” → 287 (fallback, ha egyszer még slugot használsz)
-export function parsePersonSlug(slug = "") {
-  const m = String(slug).trim().match(/^(\d+)/);
-  return m ? Number(m[1]) : null;
-}
 
 export default function ActorDetail({ slug, personId }) {
   const params = useParams();
@@ -66,24 +61,16 @@ export default function ActorDetail({ slug, personId }) {
     return () => { alive = false; };
   }, [id]);
 
-  // Legismertebb film kiválasztása (cast credit alapján, popularity szerint)
-  const bestKnownMovie = useMemo(() => {
-    const cast = data?.combined_credits?.cast || [];
-    if (!cast.length) return null;
-    return cast
-      .slice()
-      .sort((a, b) => (b.popularity || 0) - (a.popularity || 0))[0];
-  }, [data]);
-
-  const backdrop = useMemo(() => {
-    const p = bestKnownMovie?.backdrop_path || bestKnownMovie?.poster_path;
-    return p ? TMDB_IMG.w1280(p) : null;
-  }, [bestKnownMovie]);
-
   const profile = data?.profile_path ? TMDB_IMG.w500(data.profile_path) : null;
 
-  const birthday = data?.birthday ? new Date(data.birthday) : null;
-  const deathday = data?.deathday ? new Date(data.deathday) : null;
+  const birthday = useMemo(() => {
+    return data?.birthday ? new Date(data.birthday) : null;
+  }, [data?.birthday]);
+
+  const deathday = useMemo(() => {
+    return data?.deathday ? new Date(data.deathday) : null;
+  }, [data?.deathday]);
+
 
   const birthYear = birthday ? birthday.getFullYear() : null;
   const deathYear = deathday ? deathday.getFullYear() : null;

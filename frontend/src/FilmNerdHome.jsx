@@ -63,8 +63,9 @@ async function fetchMovie(sourceId) {
     try {
       const j = await res.json();
       if (j?.status_message) msg += ` – ${j.status_message}`;
-    } catch {}
-    throw new Error(msg);
+    } catch {
+      throw new Error(msg);
+    } 
   }
   const data = await res.json();
   cache.set(key, data);
@@ -435,8 +436,8 @@ export function MovieCard({ movie }) {
 
   const sourceId = movie?._sourceId ?? movie?.id;
   const auth = useAuthOptional();
-  const user = auth?.user;
-  const access = auth?.access;
+  const user = auth?.user ?? null;
+  const access = auth?.access ?? null;
 
   const [summary, setSummary] = useState(
     () => reviewSummaryCache.get(String(sourceId)) || null
@@ -468,7 +469,9 @@ export function MovieCard({ movie }) {
         };
         reviewSummaryCache.set(key, val);
         if (alive) setSummary(val);
-      } catch {}
+      } catch {
+        throw new Error("Failed to fetch review summary");
+      }
     })();
 
     return () => {
@@ -479,10 +482,12 @@ export function MovieCard({ movie }) {
   // Favourite status
   useEffect(() => {
     let alive = true;
-    if (!user || !sourceId) {
+
+    if (!user?.id || !sourceId) {
       setIsFav(false);
       return;
     }
+
     (async () => {
       try {
         const res = await fetch(
@@ -499,10 +504,12 @@ export function MovieCard({ movie }) {
         if (alive) setIsFav(false);
       }
     })();
+
     return () => {
       alive = false;
     };
   }, [user?.id, access, sourceId]);
+
 
   // Favourite toggle
   async function toggleFav(e) {
@@ -646,24 +653,27 @@ function MovieStrip({ title, subtitle, movieIds }) {
   const { elRef, scrollBy, onMouseDown, onMouseLeave, onMouseUp, onMouseMove } =
     useHorizontalScroll();
 
-  useEffect(() => {
-    let alive = true;
-    (async () => {
-      setLoading(true);
-      setError("");
-      try {
-        const res = await fetchMovies(movieIds);
-        if (alive) setData(res);
-      } catch (e) {
-        if (alive) setError(String(e));
-      } finally {
-        if (alive) setLoading(false);
-      }
-    })();
-    return () => {
-      alive = false;
-    };
-  }, [movieIds?.join(",")]);
+    useEffect(() => {
+      let alive = true;
+
+      (async () => {
+        setLoading(true);
+        setError("");
+        try {
+          const res = await fetchMovies(movieIds);
+          if (alive) setData(res);
+        } catch (e) {
+          if (alive) setError(String(e));
+        } finally {
+          if (alive) setLoading(false);
+        }
+      })();
+
+      return () => {
+        alive = false;
+      };
+    }, [movieIds]);
+
 
   return (
     <section className="relative">
@@ -790,6 +800,7 @@ function FavouriteBasedStrip() {
   const access = auth?.access;
 
   console.log("FavouriteBasedStrip auth:", { user, access });
+  const isLoggedIn = Boolean(user?.id || access);
 
   const [state, setState] = useState({
     loading: true,
@@ -802,7 +813,7 @@ function FavouriteBasedStrip() {
     let alive = true;
 
     // Consider the user "logged in" if we have either a user object OR an access token
-    if (!user && !access) {
+    if (!isLoggedIn) {
       // Not logged in at all -> simple fallback to static recommended
       setState({
         loading: false,
@@ -887,7 +898,7 @@ function FavouriteBasedStrip() {
     return () => {
       alive = false;
     };
-  }, [user?.id, access]);
+  }, [isLoggedIn, access]);
 
   if (state.loading) {
     // Skeleton, so the section does not flicker

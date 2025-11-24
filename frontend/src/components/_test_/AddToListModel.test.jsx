@@ -6,6 +6,7 @@ import {afterEach, describe, it, expect, vi, beforeEach } from 'vitest';
 import AddToListModel from '../AddToListModel';
 import * as AuthContext from '../AuthContext';
 
+
 // Mock AuthContext
 vi.mock('../AuthContext', async () => {
   const actual = await vi.importActual('../AuthContext');
@@ -16,7 +17,7 @@ vi.mock('../AuthContext', async () => {
 });
 
 // Mock fetch
-global.fetch = vi.fn();
+globalThis.fetch = vi.fn();
 
 describe('AddToListModel Component', () => {
 afterEach(() => {
@@ -24,7 +25,7 @@ afterEach(() => {
   });
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch.mockResolvedValue({
+    globalThis.fetch.mockResolvedValue({
         ok: true,
         json: () => Promise.resolve({ results: [] }),
     });
@@ -67,7 +68,7 @@ afterEach(() => {
       ]
     };
 
-    global.fetch.mockResolvedValueOnce({
+    globalThis.fetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(mockLists),
     });
@@ -99,7 +100,7 @@ afterEach(() => {
       ]
     };
 
-    global.fetch.mockResolvedValueOnce({
+    globalThis.fetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve(mockLists),
     });

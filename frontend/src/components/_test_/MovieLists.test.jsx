@@ -5,6 +5,7 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+
 // 1) AuthContext mock – factory-n belül jönnek a vi.fn()-ek
 vi.mock("../AuthContext", () => {
   const useAuth = vi.fn();
@@ -41,12 +42,12 @@ const useAuthMock = AuthContext.useAuth;
 const useAuthOptionalMock = AuthContext.useAuthOptional;
 
 // fetch mock
-global.fetch = vi.fn();
+globalThis.fetch = vi.fn();
 
 describe("MovieLists", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch.mockReset();
+    globalThis.fetch.mockReset();
   });
 
   afterEach(() => {
@@ -99,7 +100,7 @@ describe("MovieLists", () => {
     });
 
     // első (és egyetlen) fetch: GET /lists/ → üres tömb
-    global.fetch.mockResolvedValueOnce({
+    globalThis.fetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ results: [] }),
     });
@@ -145,7 +146,7 @@ describe("MovieLists", () => {
     ];
 
     // GET /lists/ → két lista
-    global.fetch.mockResolvedValueOnce({
+    globalThis.fetch.mockResolvedValueOnce({
       ok: true,
       json: () => Promise.resolve({ results: mockLists }),
     });

@@ -17,10 +17,38 @@ concurrency:
 
 jobs:
   ##############################################################################
-  # BACKEND TESTS – Django + pytest
+  # BACKEND LINT – Django + flake8 (statikus kódelemzés)
+  ##############################################################################
+  backend_lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install backend dependencies (including dev tools)
+        run: |
+          cd filmnerd_backend
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Run flake8 (backend static analysis)
+        run: |
+          cd filmnerd_backend
+          flake8 .
+
+  ##############################################################################
+  # BACKEND TESTS – Django + pytest / unittest
   ##############################################################################
   backend_tests:
     runs-on: ubuntu-latest
+    needs: backend_lint   # csak akkor fut, ha a lint is zöld
 
     steps:
       - name: Checkout repository
@@ -50,11 +78,38 @@ jobs:
 
 
   ##############################################################################
+  # FRONTEND LINT – React + ESLint (statikus kódelemzés)
+  ##############################################################################
+  frontend_lint:
+    runs-on: ubuntu-latest
+    needs: backend_tests   # csak ha a backend oké
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install frontend dependencies
+        run: |
+          cd frontend
+          npm ci
+
+      - name: Run ESLint (frontend static analysis)
+        run: |
+          cd frontend
+          npm run lint
+
+
+  ##############################################################################
   # FRONTEND TESTS – React + Vite + Vitest
   ##############################################################################
   frontend_tests:
     runs-on: ubuntu-latest
-    needs: backend_tests
+    needs: frontend_lint   # lint után jönnek a tesztek
 
     steps:
       - name: Checkout repository

@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import Review
 
+
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
     list_display = ("id", "user_id", "movie_id", "rating", "short_text", "created_at")
@@ -14,6 +15,3 @@ class ReviewAdmin(admin.ModelAdmin):
         return (obj.text[:40] + "...") if len(obj.text) > 40 else obj.text
 
     short_text.short_description = "Review text"
-
-
-

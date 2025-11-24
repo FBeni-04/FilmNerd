@@ -1,8 +1,11 @@
-// frontend/src/AuthContext.jsx
 import React, { createContext, useContext, useEffect, useState } from "react";
 
+// Belső context – nem default export
 const AuthCtx = createContext(null);
 
+const API_BASE = import.meta.env.VITE_API_BASE || "/api";
+
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const ctx = useContext(AuthCtx);
   if (ctx === null) {
@@ -17,14 +20,12 @@ export function useAuth() {
   return ctx;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuthOptional() {
   return useContext(AuthCtx);
 }
 
-// PROD-ban: VITE_API_BASE = "https://filmnerd.onrender.com/api"
-// DEV-ben: fallback "/api" → Vite proxy kezeli
-const API_BASE = import.meta.env.VITE_API_BASE || "/api";
-
+// Default export: CSAK a provider
 export default function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [access, setAccess] = useState(localStorage.getItem("access") || "");
@@ -65,7 +66,9 @@ export default function AuthProvider({ children }) {
       try {
         const data = await res.json();
         if (data.detail) msg = data.detail;
-      } catch (_) {}
+      } catch {
+        // ha a JSON parse elhasal, marad az alap üzenet
+      }
       throw new Error(msg);
     }
 
@@ -87,7 +90,9 @@ export default function AuthProvider({ children }) {
       try {
         const data = await res.json();
         if (data.detail) msg = data.detail;
-      } catch (_) {}
+      } catch {
+        // ha a JSON parse elhasal, marad az alap üzenet
+      }
       throw new Error(msg);
     }
 

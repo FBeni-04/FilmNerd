@@ -63,10 +63,11 @@ export default function PublicProfilePage() {
 
   const token = localStorage.getItem("access");
 
-  const authHeaders = {
+  const authHeaders = useMemo(() => ({
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+  }), [token]);
+
 
   useEffect(() => {
     if (!username) {
@@ -136,7 +137,7 @@ export default function PublicProfilePage() {
     }
 
     loadData();
-  }, [username]);
+  }, [username, authHeaders]);
 
   useEffect(() => {
     if (!token) return;
@@ -158,7 +159,7 @@ export default function PublicProfilePage() {
       }
     }
     loadSocial();
-  }, [token]);
+  }, [token, authHeaders]);
 
   const myRecentReviews = useMemo(() => {
     return reviews

@@ -1,6 +1,5 @@
 import { BrowserRouter, Routes, Route, useParams } from "react-router-dom";
 import FilmNerdHome from "./FilmNerdHome.jsx";
-import MovieDetail, { parseMovieSlug } from "./MovieDetail.jsx";
 import MovieLists from "./MovieLists";
 import MovieListDetail from "./MovieListDetail";
 import DirectorDetail from "./DirectorDetail.jsx";

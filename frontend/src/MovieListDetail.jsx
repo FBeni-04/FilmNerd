@@ -68,8 +68,8 @@ export default function MovieListDetail() {
       const movieData = (await Promise.all(movieDataPromises)).filter(Boolean); // Filter out any failed fetches
       setItems(movieData);
 
-    } catch (err) {
-      setError(err.message);
+    } catch {
+      setError('Failed to load list details.');
     } finally {
       setLoading(false);
     }
@@ -102,7 +102,7 @@ export default function MovieListDetail() {
         setError('Failed to remove item. Refreshing...');
         fetchListDetails();
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred. Refreshing...');
       fetchListDetails();
     }
@@ -138,8 +138,8 @@ export default function MovieListDetail() {
         await fetchListDetails();
       }
 
-    } catch (err) {
-      setAddError(err.message);
+    } catch {
+      setAddError('An error occurred while adding the movie.');
     } finally {
       setIsAdding(false);
     }

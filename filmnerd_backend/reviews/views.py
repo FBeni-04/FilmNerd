@@ -14,12 +14,14 @@ from django.shortcuts import get_object_or_404
 from rest_framework.exceptions import NotFound
 
 from .models import Review, Favourite, MovieList, MovieListItem, Follow, Watchlist
-from .serializers import (ReviewSerializer, RegisterSerializer, LoginSerializer, MeSerializer, 
-                          FavouriteSerializer, MovieListCreateUpdateSerializer, MovieListItemCreateSerializer, MovieListSerializer,
-                          FollowSerializer, FollowCreateSerializer, UserPublicSerializer, WatchlistSerializer)
+from .serializers import (ReviewSerializer, RegisterSerializer, LoginSerializer, MeSerializer,
+                          FavouriteSerializer, MovieListCreateUpdateSerializer,
+                          MovieListItemCreateSerializer, MovieListSerializer,
+                          FollowSerializer, UserPublicSerializer, WatchlistSerializer)
 from .permissions import IsOwnerOrReadOnly
 
 User = get_user_model()
+
 
 def set_expiration(user):
     lifetime = timedelta(days=7)
@@ -30,6 +32,7 @@ def set_expiration(user):
 # --- Auth ---
 class RegisterView(APIView):
     permission_classes = [permissions.AllowAny]
+
     def post(self, request):
         ser = RegisterSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
@@ -42,8 +45,10 @@ class RegisterView(APIView):
             "refresh": str(refresh),
         })
 
+
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
+
     def post(self, request):
         ser = LoginSerializer(data=request.data)
         ser.is_valid(raise_exception=True)
@@ -56,8 +61,10 @@ class LoginView(APIView):
             "refresh": str(refresh),
         })
 
+
 class MeView(APIView):
     permission_classes = [permissions.IsAuthenticated]
+
     def get(self, request):
         return Response(MeSerializer(request.user).data)
 
@@ -91,8 +98,8 @@ class ReviewListCreateView(generics.ListCreateAPIView):
             raise PermissionDenied("Bejelentkezés szükséges.")
 
         movie_id = self.request.data.get("movie_id")
-        rating   = self.request.data.get("rating")
-        text     = self.request.data.get("text")
+        rating = self.request.data.get("rating")
+        text = self.request.data.get("text")
 
         # update_or_create a tisztább megoldás
         obj, created = Review.objects.update_or_create(
@@ -129,6 +136,7 @@ class ReviewRetrieveUpdateDestroyView(generics.RetrieveUpdateDestroyAPIView):
     def perform_update(self, serializer):
         # Mindig a bejelentkezett user a tulaj; user-t külső változtatásra nem engedjük
         serializer.save(user=self.request.user)
+
 
 class FavouriteViewSet(viewsets.ModelViewSet):
     queryset = Favourite.objects.all()
@@ -185,8 +193,8 @@ def review_summary(request):
         "avg": round((agg["avg"] or 0), 1),
     })
 
-#List Creating views
 
+# List Creating views
 class MovieListViewSet(viewsets.ModelViewSet):
     permission_classes = [permissions.IsAuthenticated, IsOwnerOrReadOnly]
 
@@ -235,7 +243,6 @@ class MovieListItemDestroyView(generics.DestroyAPIView):
             raise permissions.PermissionDenied("You do not own this list.")
         item = get_object_or_404(MovieListItem, movie_list=movie_list, movie_id=movie_id)
         return item
-
 
 
 # --- Social: Follow / Followers / Following / Friends ---
@@ -304,7 +311,8 @@ class FriendsListView(APIView):
         mutual_ids = list(following_ids.intersection(follower_ids))
         users = User.objects.filter(id__in=mutual_ids)
         return Response(UserPublicSerializer(users, many=True).data)
-    
+
+
 class WatchlistViewSet(viewsets.ModelViewSet):
     queryset = Watchlist.objects.all()
     serializer_class = WatchlistSerializer
@@ -340,6 +348,7 @@ class WatchlistViewSet(viewsets.ModelViewSet):
             movie_id=movie_id
         ).exists()
         return Response({"exists": exists})
+
 
 class UserPublicProfileView(generics.RetrieveAPIView):
     """
@@ -410,6 +419,7 @@ class UserReviewsView(UsernameMixin, generics.ListAPIView):
         user = self.get_user()
         return base_qs.filter(user=user)
 
+
 class UserWatchlistView(UsernameMixin, generics.ListAPIView):
     """
     GET /api/users/<username>/watchlist/
@@ -421,4 +431,3 @@ class UserWatchlistView(UsernameMixin, generics.ListAPIView):
         base_qs = Watchlist.objects.all()
         user = self.get_user()
         return base_qs.filter(user=user)
-    

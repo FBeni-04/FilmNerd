@@ -5,6 +5,7 @@ import { render, screen, cleanup } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 
+
 // 1) AuthContext mock – itt hozzuk létre a vi.fn()-eket
 vi.mock("../AuthContext", () => {
   const useAuth = vi.fn();
@@ -35,7 +36,7 @@ vi.mock("../AuthModal", () => ({
 // 4) SearchBox mock
 vi.mock("../SearchBox", () => ({
   __esModule: true,
-  default: ({ onSelect }) => (
+  default: () => (
     <div
       data-testid="search-box"
       // ha szeretnéd, tesztben hívható lenne így:
@@ -66,12 +67,12 @@ const useAuthOptionalMock = AuthContext.useAuthOptional;
 const mockedUseParams = useParams;
 
 // fetch mock
-global.fetch = vi.fn();
+globalThis.fetch = vi.fn();
 
 describe("MovieListDetail", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    global.fetch.mockReset();
+    globalThis.fetch.mockReset();
   });
 
   afterEach(() => {
@@ -133,7 +134,7 @@ describe("MovieListDetail", () => {
     };
 
     // backend + TMDB hívások szétválasztása URL alapján
-    global.fetch.mockImplementation((url, options = {}) => {
+    globalThis.fetch.mockImplementation((url, options = {}) => {
       const urlStr = String(url);
 
       // 1) backend: GET /lists/:id/

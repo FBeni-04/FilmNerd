@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import EmojiRating from "./EmojiRating";
 import { API_BASE } from "../lib/api";
 import { useAuthOptional } from "./AuthContext";
@@ -12,8 +12,9 @@ function ReviewsBoxAuthed({ movieId, user, access, onRequireLogin }) {
   const [text, setText] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  
 
-  async function load() {
+  const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
@@ -29,7 +30,6 @@ function ReviewsBoxAuthed({ movieId, user, access, onRequireLogin }) {
       setList(rows);
       setAvg(summary);
 
-      // Saját korábbi értékelés visszatöltése
       if (user?.id) {
         const mine = rows.find(x => x.user_id === user.id);
         setRating(mine?.rating ?? 0);
@@ -43,11 +43,12 @@ function ReviewsBoxAuthed({ movieId, user, access, onRequireLogin }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [movieId, user?.id]);
+
 
   useEffect(() => {
     if (movieId) load();
-  }, [movieId, user?.id]);
+  }, [movieId, user?.id, load]);
 
   async function save() {
     if (!user || !access) {
@@ -92,13 +93,6 @@ function ReviewsBoxAuthed({ movieId, user, access, onRequireLogin }) {
       setSaving(false);
     }
   }
-
-  const stars = useMemo(() => {
-    const x = Math.round((avg.avg || 0) * 2) / 2;
-    const full = Math.floor(x);
-    const half = x - full >= 0.5;
-    return { full, half };
-  }, [avg]);
 
   return (
     <div className="mt-10 rounded-xl border border-white/10 bg-neutral-900/40 p-4">

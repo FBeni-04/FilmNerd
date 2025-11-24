@@ -1,11 +1,9 @@
 from rest_framework import serializers
-from .models import Review, User, Favourite, MovieList, MovieListItem, Follow, Watchlist
-
-# reviews/serializers.py
-from rest_framework import serializers
-from django.contrib.auth import authenticate, get_user_model    
+from .models import Review, Favourite, MovieList, MovieListItem, Follow, Watchlist
+from django.contrib.auth import authenticate, get_user_model
 
 User = get_user_model()
+
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -40,7 +38,6 @@ class LoginSerializer(serializers.Serializer):
         return data
 
 
-
 class MeSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -64,6 +61,7 @@ class UserPublicSerializer(serializers.ModelSerializer):
             "email": {"read_only": True},
         }
 
+
 class FavouriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Favourite
@@ -75,14 +73,14 @@ class FavouriteSerializer(serializers.ModelSerializer):
         if not v:
             raise serializers.ValidationError("movie_id required")
         return v
-    
-#for MovieList and MovieListItem
 
 
+# for MovieList and MovieListItem
 class MovieListItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = MovieListItem
         fields = ['movie_id', 'added_at']
+
 
 class MovieListSerializer(serializers.ModelSerializer):
     items = MovieListItemSerializer(many=True, read_only=True)
@@ -92,10 +90,12 @@ class MovieListSerializer(serializers.ModelSerializer):
         model = MovieList
         fields = ['id', 'user', 'name', 'created_at', 'items']
 
+
 class MovieListCreateUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = MovieList
         fields = ['name']
+
 
 class MovieListItemCreateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -124,7 +124,8 @@ class FollowCreateSerializer(serializers.ModelSerializer):
         if request and request.user == to_user:
             raise serializers.ValidationError("You cannot follow yourself.")
         return attrs
-    
+
+
 class WatchlistSerializer(serializers.ModelSerializer):
     class Meta:
         model = Watchlist

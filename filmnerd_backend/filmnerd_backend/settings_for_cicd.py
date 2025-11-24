@@ -5,12 +5,9 @@ from datetime import timedelta
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(BASE_DIR / ".env")
-
 DEBUG = True
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "dev-only-secret-change-me")
 ALLOWED_HOSTS = ["*"]
-
-
 INSTALLED_APPS = [
     "django.contrib.admin",
     "django.contrib.auth",
@@ -18,10 +15,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     "rest_framework",
     "corsheaders",
-
     "reviews",
 ]
 
@@ -38,11 +33,9 @@ MIDDLEWARE = [
 
 
 CORS_ALLOW_ALL_ORIGINS = True
-
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 50,
-    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
@@ -56,25 +49,15 @@ DATABASES = {
           "NAME": BASE_DIR / "db.sqlite3",
       }
 }
-    
-
 STATIC_URL = "/static/"
 ROOT_URLCONF = "filmnerd_backend.urls"
-
 AUTH_USER_MODEL = "reviews.User"
-
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
-
 DATABASES['default']['TEST'] = {
     'MIRROR': 'default'
 }
-
-
-SIMPLE_JWT = { "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-               "REFRESH_TOKEN_LIFETIME": timedelta(days=7) }
-
-
-
+SIMPLE_JWT = {"ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+              "REFRESH_TOKEN_LIFETIME": timedelta(days=7)}
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",

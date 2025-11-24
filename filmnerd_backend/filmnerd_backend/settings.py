@@ -54,14 +54,10 @@ CSRF_TRUSTED_ORIGINS = [
     "https://fbeni-04.github.io",
     "https://filmnerd.onrender.com",
 ]
-
 CORS_ALLOW_CREDENTIALS = True
-
-
 REST_FRAMEWORK = {
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.PageNumberPagination",
     "PAGE_SIZE": 50,
-    "DEFAULT_PERMISSION_CLASSES": ["rest_framework.permissions.AllowAny"],
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
@@ -91,14 +87,9 @@ else:
 
 # Tesztadatbázis: használja ugyanazt a configot mirrorral
 DATABASES["default"]["TEST"] = {"MIRROR": "default"}
-
-    
-
 STATIC_URL = "/static/"
 ROOT_URLCONF = "filmnerd_backend.urls"
-
 AUTH_USER_MODEL = "reviews.User"
-
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 DATABASES['default']['TEST'] = {
@@ -106,10 +97,8 @@ DATABASES['default']['TEST'] = {
 }
 
 
-SIMPLE_JWT = { "ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
-               "REFRESH_TOKEN_LIFETIME": timedelta(days=7) }
-
-
+SIMPLE_JWT = {"ACCESS_TOKEN_LIFETIME": timedelta(minutes=60),
+              "REFRESH_TOKEN_LIFETIME": timedelta(days=7)}
 
 TEMPLATES = [
     {

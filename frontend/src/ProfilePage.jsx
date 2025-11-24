@@ -62,10 +62,11 @@ export default function ProfilePage() {
 
   const token = localStorage.getItem("access");
 
-  const authHeaders = {
+  const authHeaders = useMemo(() => ({
     "Content-Type": "application/json",
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
-  };
+  }), [token]);
+
 
   useEffect(() => {
     if (!token) {
@@ -141,7 +142,7 @@ export default function ProfilePage() {
     }
 
     loadData();
-  }, [token]);
+  }, [token, authHeaders]);
 
   const myRecentReviews = useMemo(() => {
     if (!me) return [];
