@@ -92,7 +92,7 @@ export default function SearchPage() {
                                             if (!res.ok) return { ...m, _runtime: undefined };
                                             const dj = await res.json();
                                             return { ...m, _runtime: dj?.runtime };
-                                        } catch (_) {
+                                        } catch {
                                             return { ...m, _runtime: undefined };
                                         }
                                     })
