@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import Navbar from "./components/Navbar";
 import { Link } from "react-router-dom";
+import { API_BASE } from "./lib/api";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const IMG = {
@@ -20,7 +21,7 @@ function useDebounced(value, delay = 400) {
 export default function SearchPage() {
     const apiKey = (import.meta.env.VITE_TMDB_API_KEY || "").trim();
 
-    const [type, setType] = useState("movie"); // movie | actor | director
+    const [type, setType] = useState("movie"); // movie | actor | director | user
     const [query, setQuery] = useState("");
     const dq = useDebounced(query, 400);
 
@@ -111,7 +112,23 @@ export default function SearchPage() {
                         release_date: m.release_date,
                         vote_average: m.vote_average,
                     })));
-                } else {
+                } else if (type === "user") {
+                    if (!dq.trim()) {
+                        setResults([]);
+                        setLoading(false);
+                        return;
+                    }
+                    const url = `${API_BASE}/users/search/?q=${encodeURIComponent(dq)}`;
+                    const r = await fetch(url);
+                    const j = r.ok ? await r.json() : [];
+                    const list = Array.isArray(j) ? j.slice(0, 20) : [];
+                    if (alive) setResults(list.map((u) => ({
+                        kind: "user",
+                        id: u.id,
+                        username: u.username,
+                        name: u.name,
+                    })));
+                }   else {
                     // person search
                     if (!dq.trim()) { setResults([]); setLoading(false); return; }
                     const url = `${TMDB_BASE}/search/person?api_key=${apiKey}&language=en-US&include_adult=false&page=1&query=${encodeURIComponent(dq)}`;
@@ -166,6 +183,7 @@ export default function SearchPage() {
                             <option value="movie">Movie title</option>
                             <option value="actor">Actor/Actress</option>
                             <option value="director">Director</option>
+                            <option value="user">User</option>
                         </select>
                     </div>
 
@@ -174,7 +192,15 @@ export default function SearchPage() {
                         <input
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            placeholder={type === "movie" ? "Search movies…" : type === "actor" ? "Search actors/actresses…" : "Search directors…"}
+                            placeholder={
+                                type === "movie"
+                                    ? "Search movies…"
+                                    : type === "actor"
+                                        ? "Search actors/actresses…"
+                                        : type === "director"
+                                            ? "Search directors…"
+                                            : "Search users…"
+                            }
                             className="w-full rounded-lg border border-white/10 bg-neutral-900 p-2"
                         />
                     </div>
@@ -253,6 +279,16 @@ export default function SearchPage() {
                                     <div className="text-xs text-neutral-400">
                                         {(it.release_date ? new Date(it.release_date).getFullYear() : "")} · ⭐ {isFinite(it.vote_average) ? (it.vote_average ?? 0).toFixed(1) : "–"}
                                     </div>
+                                </div>
+                            </Link>
+                        ) : it.kind === "user" ? (
+                            <Link key={`u-${it.id}`} to={`/users/${it.username}`} className="group flex items-center gap-3 rounded-lg border border-white/10 bg-neutral-900 p-3">
+                                <div className="h-12 w-12 rounded-full bg-neutral-800 flex items-center justify-center text-neutral-300 text-sm">
+                                    {(it.name || it.username || "?").slice(0, 1).toUpperCase()}
+                                </div>
+                                <div className="min-w-0">
+                                    <div className="truncate font-medium text-neutral-100">{it.name || it.username}</div>
+                                    <div className="text-xs text-neutral-400">@{it.username}</div>
                                 </div>
                             </Link>
                         ) : (
