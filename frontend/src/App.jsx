@@ -4,6 +4,8 @@ import MovieLists from "./MovieLists";
 import MovieListDetail from "./MovieListDetail";
 import DirectorDetail from "./DirectorDetail.jsx";
 import ActorDetail from "./ActorDetail.jsx";
+import MovieDetail from "./MovieDetail.jsx";
+import SearchPage from "./SearchPage.jsx";
 import ProfilePage from "./ProfilePage.jsx";
 import PublicProfilePage from "./PublicProfilePage.jsx";
 import MovieDetail from "./MovieDetail.jsx";

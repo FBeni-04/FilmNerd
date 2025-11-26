@@ -43,7 +43,7 @@ export default function Navbar() {
               Home
             </Link>
             <Link to="/lists" className="hover:text-white">Lists</Link>
-            <a className="hover:text-white" href="#">Search</a>
+            <Link className="hover:text-white" to="/search">Search</Link>
             {user ? (
             <Link to="/profile" className="hover:text-white">
               {user.username}
@@ -84,7 +84,7 @@ export default function Navbar() {
                 Home
               </Link>
               <Link className="  rounded px-3 py-2 hover:bg-white/5" to="/lists">Lists</Link>
-              <a className="rounded px-3 py-2 hover:bg-white/5" href="#">Search</a>
+              <Link className="rounded px-3 py-2 hover:bg-white/5" to="/search">Search</Link>
               {user ? (
               <Link to="/profile" className="hover:text-white">
                 {user.username}
