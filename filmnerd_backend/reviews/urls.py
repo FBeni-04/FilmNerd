@@ -19,6 +19,7 @@ from .views import (
     FollowingListView,
     FriendsListView,
     UserPublicProfileView,
+    UserSearchView,
     UserListsView,
     UserFavouritesView,
     UserReviewsView,
@@ -77,6 +78,7 @@ urlpatterns = [
 
 
     # --- Public user profile endpoints (NINCS 'api/' előtte!) ---
+    path("users/search/", UserSearchView.as_view(), name="user-search"),
     path("users/<str:username>/", UserPublicProfileView.as_view(), name="user-public-profile"),
     path("users/<str:username>/lists/", UserListsView.as_view(), name="user-lists"),
     path("users/<str:username>/favourites/", UserFavouritesView.as_view(), name="user-favourites"),
