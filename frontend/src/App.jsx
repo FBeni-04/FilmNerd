@@ -8,7 +8,6 @@ import MovieDetail from "./MovieDetail.jsx";
 import SearchPage from "./SearchPage.jsx";
 import ProfilePage from "./ProfilePage.jsx";
 import PublicProfilePage from "./PublicProfilePage.jsx";
-import MovieDetail from "./MovieDetail.jsx";
 
 function MovieRoute() {
   const { slug } = useParams();
