@@ -1,5 +1,5 @@
 # reviews/views.py
-from django.db.models import Avg, Count
+from django.db.models import Avg, Count, Q
 from django.db import transaction
 from rest_framework import generics, permissions, status, viewsets
 from rest_framework.response import Response
@@ -359,6 +359,26 @@ class UserPublicProfileView(generics.RetrieveAPIView):
     serializer_class = UserPublicSerializer
     lookup_field = "username"
     permission_classes = [permissions.AllowAny]
+
+
+class UserSearchView(APIView):
+    """
+    GET /api/users/search/?q=<term>
+    Public endpoint to search users by username or name (case-insensitive).
+    Returns a limited public representation using UserPublicSerializer.
+    """
+    permission_classes = [permissions.AllowAny]
+
+    def get(self, request):
+        q = (request.query_params.get("q") or "").strip()
+        if not q:
+            return Response([], status=200)
+
+        qs = User.objects.filter(
+            Q(username__icontains=q) | Q(name__icontains=q)
+        ).order_by("username")[:20]
+        data = UserPublicSerializer(qs, many=True).data
+        return Response(data)
 
 
 class UsernameMixin:
