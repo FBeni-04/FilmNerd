@@ -523,7 +523,7 @@ export default function MovieDetail({ slug, movieId }) {
                       .slice(0, 5)
                       .map((p) => {
                         const photo = p.profile_path
-                          ? TMDB_IMG.w185(p.profile_path)
+                          ? TMDB_IMG.w500(p.profile_path)
                           : null;
                         return (
                           <Link
