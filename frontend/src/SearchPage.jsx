@@ -81,6 +81,34 @@ export default function SearchPage() {
                             // runtime not available in this payload; skip unless we fetch details per item
                             return true;
                         });
+
+                        // If runtime filters are requested, fetch per-movie details to get runtime
+                        if ((minRuntime || maxRuntime) && data.length) {
+                            try {
+                                const detailed = await Promise.all(
+                                    data.map(async (m) => {
+                                        try {
+                                            const res = await fetch(`${TMDB_BASE}/movie/${m.id}?api_key=${apiKey}&language=en-US`);
+                                            if (!res.ok) return { ...m, _runtime: undefined };
+                                            const dj = await res.json();
+                                            return { ...m, _runtime: dj?.runtime };
+                                        } catch (_) {
+                                            return { ...m, _runtime: undefined };
+                                        }
+                                    })
+                                );
+                                data = detailed.filter((m) => {
+                                    const rt = Number(m._runtime);
+                                    if (!isFinite(rt)) return true; // if runtime unknown, do not exclude aggressively
+                                    if (minRuntime && rt < Number(minRuntime)) return false;
+                                    if (maxRuntime && rt > Number(maxRuntime)) return false;
+                                    return true;
+                                });
+                            } catch (e) {
+                                // If details fetch fails, fall back to previously filtered list
+                                console.warn("[SearchPage] Failed to fetch runtimes for filtering", e);
+                            }
+                        }
                     } else if (anyFilter) {
                         const params = new URLSearchParams({
                             api_key: apiKey,
