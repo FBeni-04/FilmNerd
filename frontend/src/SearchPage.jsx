@@ -5,8 +5,8 @@ import { API_BASE } from "./lib/api";
 
 const TMDB_BASE = "https://api.themoviedb.org/3";
 const IMG = {
-    profile: (p) => (p ? `https://image.tmdb.org/t/p/w185${p}` : null),
-    poster: (p) => (p ? `https://image.tmdb.org/t/p/w185${p}` : null),
+    profile: (p) => (p ? `https://image.tmdb.org/t/p/w500${p}` : null),
+    poster: (p) => (p ? `https://image.tmdb.org/t/p/w500${p}` : null),
 };
 
 function useDebounced(value, delay = 400) {
