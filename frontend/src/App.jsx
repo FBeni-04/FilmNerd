@@ -31,6 +31,7 @@ export default function App() {
         <Route path="/actor/:id" element={<ActorDetail />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="/users/:username" element={<PublicProfilePage />} />
+        <Route path="/search" element={<SearchPage />} />
       </Routes>
     </BrowserRouter>
   );
